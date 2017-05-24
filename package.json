@@ -1,0 +1,29 @@
+{
+  "name": "docx-merger",
+  "version": "0.0.1",
+  "description": "Merge Docx File from NodeJS or Browser",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apurvaojas/docx-merger.git"
+  },
+  "keywords": [
+    "docx",
+    "composition",
+    "document",
+    "office",
+    "docx merge",
+    "microsoft word"
+  ],
+  "author": "Apurv Ojas <apurvaojas10@gmail.com>",
+  "dependencies": {
+    "jszip": "2.6.1"
+  },
+  "bugs": {
+    "url": "https://github.com/apurvaojas/docx-merger/issues"
+  },
+  "homepage": "https://github.com/apurvaojas/docx-merger#readme"
+}
