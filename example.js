@@ -1,15 +1,15 @@
-var builder = require('./index');
+var DocxMerger = require('./index');
 
 var fs = require('fs');
 var path = require('path');
 
 var file1 = fs
-    .readFileSync(path.resolve(__dirname, 'template.docx'), 'binary');
+    .readFileSync(path.resolve(__dirname, 'CoverLetter.docx'), 'binary');
 
 var file2 = fs
-    .readFileSync(path.resolve(__dirname, 'template1.docx'), 'binary');
+    .readFileSync(path.resolve(__dirname, 'GEWaterAndProcessTechnologies.docx'), 'binary');
 
-var docx = new builder.DocxMerger({},[file1,file2]);
+var docx = new DocxMerger({},[file1,file2]);
 
 
 //SAVING THE DOCX FILE
