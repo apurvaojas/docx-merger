@@ -71,10 +71,10 @@ function DocxMerger(options, files) {
 
             for (var mfile in medFiles) {
                 if (/^word\/media/.test(mfile) && mfile.length > 11) {
-                    // console.log(file);
+                     // console.log(mfile);
                     media[count] = {};
                     media[count].oldTarget = mfile;
-                    media[count].newTarget = mfile.replace(/[0-9]/, count).replace('word/', "");
+                    media[count].newTarget = mfile.replace(/[0-9]/, '_'+count).replace('word/', "");
                     media[count].fileIndex = index;
                     self.updateMediaRelations(zip, count);
                     self.updateMediaContent(zip, count);
@@ -83,7 +83,7 @@ function DocxMerger(options, files) {
             }
         });
 
-        console.log(JSON.stringify(media));
+        // console.log(JSON.stringify(media));
 
         // this.updateRelation(files);
     };
@@ -92,7 +92,7 @@ function DocxMerger(options, files) {
 
         var self = this;
 
-        var xmlString = Utf8ArrayToString(zip.file("word/_rels/document.xml.rels")._data.getContent());
+        var xmlString = zip.file("word/_rels/document.xml.rels").asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
         var childNodes = xml.getElementsByTagName('Relationships')[0].childNodes;
@@ -102,9 +102,11 @@ function DocxMerger(options, files) {
             if (/^\d+$/.test(node) && childNodes[node].getAttribute) {
                 var target = childNodes[node].getAttribute('Target');
                 if ('word/' + target == self._media[count].oldTarget) {
-                    childNodes[node].setAttribute('Target', self._media[count].newTarget);
+
                     self._media[count].oldRelID = childNodes[node].getAttribute('Id');
-                    childNodes[node].setAttribute('Id', self._media[count].oldRelID+count);
+
+                    childNodes[node].setAttribute('Target', self._media[count].newTarget);
+                    childNodes[node].setAttribute('Id', self._media[count].oldRelID+'_'+count);
                 }
             }
         }
@@ -123,11 +125,10 @@ function DocxMerger(options, files) {
     this.updateMediaContent = function(zip, count) {
         var self = this;
 
-        var xmlString = Utf8ArrayToString(zip.file("word/document.xml")._data.getContent());
+        var xmlString = zip.file("word/document.xml").asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
-        xmlString = xmlString.replace(this._media[count].oldRelID, this._media[count].oldRelID+count);
-
+        xmlString = xmlString.replace(new RegExp(this._media[count].oldRelID+'"', 'g'), this._media[count].oldRelID+'_'+count+'"');
 
         zip.file("word/document.xml", "");
 
@@ -142,7 +143,7 @@ function DocxMerger(options, files) {
 
         files.forEach(function(zip) {
             // var zip = new JSZip(file);
-            var xmlString = Utf8ArrayToString(zip.file("[Content_Types].xml")._data.getContent());
+            var xmlString = zip.file("[Content_Types].xml").asText();
             var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
             var childNodes = xml.getElementsByTagName('Types')[0].childNodes;
@@ -206,7 +207,7 @@ function DocxMerger(options, files) {
         var self = this;
         // this._media.forEach(function (media) {
         for (var media in this._media) {
-            var content = self._files[this._media[media].fileIndex].file(this._media[media].oldTarget)._data.getContent();
+            var content = self._files[this._media[media].fileIndex].file(this._media[media].oldTarget).asUint8Array();
 
             base.file('word/' + this._media[media].newTarget, content);
         }
@@ -214,7 +215,7 @@ function DocxMerger(options, files) {
 
     this.generateContentTypes = function(zip) {
         // body...
-        var xmlString = Utf8ArrayToString(zip.file("[Content_Types].xml")._data.getContent());
+        var xmlString = zip.file("[Content_Types].xml").asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var serializer = new XMLSerializer();
 
