@@ -4,10 +4,10 @@ var fs = require('fs');
 var path = require('path');
 
 var file1 = fs
-    .readFileSync(path.resolve(__dirname, 'CoverLetter.docx'), 'binary');
+    .readFileSync(path.resolve(__dirname, 'template.docx'), 'binary');
 
 var file2 = fs
-    .readFileSync(path.resolve(__dirname, 'GEWaterAndProcessTechnologies.docx'), 'binary');
+    .readFileSync(path.resolve(__dirname, 'template1.docx'), 'binary');
 
 var docx = new DocxMerger({},[file1,file2]);
 
