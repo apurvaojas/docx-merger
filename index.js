@@ -95,6 +95,8 @@ function DocxMerger(options, files) {
                 if (/^\d+$/.test(node) && nodes[node].getAttribute) {
                     var styleId = nodes[node].getAttribute('w:styleId');
                     nodes[node].setAttribute('w:styleId', styleId+'_'+index);
+
+                    self.updateStyleRel_Content(zip, index, styleId);
                 }
             }
 
