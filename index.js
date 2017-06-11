@@ -8,7 +8,8 @@ function DocxMerger(options, files) {
     this._body = [];
     this._header = [];
     this._footer = [];
-    this._style = options.style || 'source';
+    this._Basestyle = options.style || 'source';
+    this._style = [];
     this._pageBreak = options.pageBreak || true;
     this._files = [];
     var self = this;
@@ -40,11 +41,13 @@ function DocxMerger(options, files) {
     this.mergeBody = function(files) {
 
         var self = this;
+        this._builder = this._body;
 
         this.mergeContentTypes(files);
         this.prepareMediaFiles(files);
         this.mergeRelations(files);
-        
+
+        this.prepareStyles(files);
         this.mergeStyles(files);
 
         files.forEach(function(zip) {
@@ -60,15 +63,64 @@ function DocxMerger(options, files) {
         });
     };
 
-    this.mergeStyles = function(files){
+    this.mergeStyles = function(files) {
+
+        // this._builder = this._style;
+
+        // console.log("MERGE__STYLES");
+        var self = this;
+
+        files.forEach(function(zip) {
+            //var zip = new JSZip(file);
+            var xml = zip.file("word/styles.xml").asText();
+            // xml = xml.substring(xml.indexOf("<w:style"));
+            // xml = xml.substring(0, xml.indexOf("</w:body>"));
+            xml = xml.substring(xml.indexOf("<w:style"), xml.indexOf("</w:styles"));
+            // console.log(xml);
+            // self.insertRaw(xml);
+
+            self._style.push(xml);
+
+        });
+    };
+
+    this.prepareStyles = function(files){
         var self = this;
         var style = this._styles;
+        var serializer = new XMLSerializer();
 
         files.forEach(function(zip, index){
             var xmlString = zip.file("word/styles.xml").asText();
             var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
-            var nodes = xml.getElementsByTagName('w:style');   
+            var nodes = xml.getElementsByTagName('w:style');
+
+            for (var node in nodes) {
+                if (/^\d+$/.test(node) && nodes[node].getAttribute) {
+                    var styleId = nodes[node].getAttribute('w:styleId');
+                    nodes[node].setAttribute('w:styleId', styleId+'_'+index);
+                }
+            }
+
+            var startIndex = xmlString.indexOf("<w:styles ");
+            xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
+
+            zip.file("word/styles.xml", xmlString);
+            // console.log(nodes);
         });
+    };
+
+
+    this.updateStyleRel_Content = function(zip, fileIndex, styleId) {
+        var self = this;
+
+        var xmlString = zip.file("word/document.xml").asText();
+        var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+
+        xmlString = xmlString.replace(new RegExp('w:val="'+styleId+'"', 'g'), 'w:val="'+styleId+'_'+fileIndex+'"');
+
+        // zip.file("word/document.xml", "");
+
+        zip.file("word/document.xml", xmlString);
     };
 
     this.prepareMediaFiles = function(files) {
@@ -140,8 +192,6 @@ function DocxMerger(options, files) {
 
         xmlString = xmlString.replace(new RegExp(this._media[count].oldRelID+'"', 'g'), this._media[count].oldRelID+'_'+count+'"');
 
-        zip.file("word/document.xml", "");
-
         zip.file("word/document.xml", xmlString);
     };
 
@@ -202,6 +252,7 @@ function DocxMerger(options, files) {
         this.generateContentTypes(zip);
         this.copyMediaFiles(zip);
         this.generateRelations(zip);
+        this.generateStyles(zip);
 
         zip.file("word/document.xml", xml);
 
@@ -252,6 +303,22 @@ function DocxMerger(options, files) {
         xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
 
         zip.file("word/_rels/document.xml.rels", xmlString);
+    };
+
+    this.generateStyles = function (zip) {
+        var xml = zip.file("word/styles.xml").asText();
+        var startIndex = xml.indexOf("</w:docDefaults>")+16;
+        var endIndex = xml.indexOf("</w:styles>");
+
+        console.log(xml.substring(startIndex, endIndex))
+
+        xml = xml.replace(xml.slice(startIndex, endIndex), this._style.join(''));
+
+        console.log(xml.substring(startIndex, xml.indexOf("</w:styles>")))
+        console.log(this._style.join(''))
+        console.log(xml)
+
+        zip.file("word/styles.xml", xml);
     };
 
     if (this._files.length > 0) {
