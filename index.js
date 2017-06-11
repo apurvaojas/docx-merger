@@ -43,8 +43,9 @@ function DocxMerger(options, files) {
 
         this.mergeContentTypes(files);
         this.prepareMediaFiles(files);
-
         this.mergeRelations(files);
+        
+        this.mergeStyles(files);
 
         files.forEach(function(zip) {
             //var zip = new JSZip(file);
@@ -57,7 +58,17 @@ function DocxMerger(options, files) {
             if (self._pageBreak)
                 self.insertPageBreak();
         });
+    };
 
+    this.mergeStyles = function(files){
+        var self = this;
+        var style = this._styles;
+
+        files.forEach(function(zip, index){
+            var xmlString = zip.file("word/styles.xml").asText();
+            var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+            var nodes = xml.getElementsByTagName('w:style');   
+        });
     };
 
     this.prepareMediaFiles = function(files) {
@@ -119,7 +130,6 @@ function DocxMerger(options, files) {
         zip.file("word/_rels/document.xml.rels", xmlString);
 
         // console.log( xmlString );
-
     };
 
     this.updateMediaContent = function(zip, count) {
@@ -133,8 +143,6 @@ function DocxMerger(options, files) {
         zip.file("word/document.xml", "");
 
         zip.file("word/document.xml", xmlString);
-
-
     };
 
     this.mergeContentTypes = function(files) {
@@ -157,7 +165,6 @@ function DocxMerger(options, files) {
             }
 
         });
-
     };
 
     this.mergeRelations = function(files) {
@@ -180,7 +187,6 @@ function DocxMerger(options, files) {
             }
 
         });
-
     };
 
     this.save = function(type, callback) {
@@ -200,7 +206,6 @@ function DocxMerger(options, files) {
         zip.file("word/document.xml", xml);
 
         callback(zip.generate({ type: type }));
-
     };
 
     this.copyMediaFiles = function(base) {
