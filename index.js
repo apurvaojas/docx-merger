@@ -71,13 +71,10 @@ function DocxMerger(options, files) {
         var self = this;
 
         files.forEach(function(zip) {
-            //var zip = new JSZip(file);
+
             var xml = zip.file("word/styles.xml").asText();
-            // xml = xml.substring(xml.indexOf("<w:style"));
-            // xml = xml.substring(0, xml.indexOf("</w:body>"));
-            xml = xml.substring(xml.indexOf("<w:style"), xml.indexOf("</w:styles"));
-            // console.log(xml);
-            // self.insertRaw(xml);
+
+            xml = xml.substring(xml.indexOf("<w:style "), xml.indexOf("</w:styles"));
 
             self._style.push(xml);
 
@@ -307,16 +304,16 @@ function DocxMerger(options, files) {
 
     this.generateStyles = function (zip) {
         var xml = zip.file("word/styles.xml").asText();
-        var startIndex = xml.indexOf("</w:docDefaults>")+16;
+        var startIndex = xml.indexOf("<w:style ");
         var endIndex = xml.indexOf("</w:styles>");
 
-        console.log(xml.substring(startIndex, endIndex))
+        // console.log(xml.substring(startIndex, endIndex))
 
         xml = xml.replace(xml.slice(startIndex, endIndex), this._style.join(''));
 
-        console.log(xml.substring(startIndex, xml.indexOf("</w:styles>")))
-        console.log(this._style.join(''))
-        console.log(xml)
+        // console.log(xml.substring(xml.indexOf("</w:docDefaults>")+16, xml.indexOf("</w:styles>")))
+        // console.log(this._style.join(''))
+        // console.log(xml)
 
         zip.file("word/styles.xml", xml);
     };
