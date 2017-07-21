@@ -95,7 +95,24 @@ function DocxMerger(options, files) {
                 if (/^\d+$/.test(node) && nodes[node].getAttribute) {
                     var styleId = nodes[node].getAttribute('w:styleId');
                     nodes[node].setAttribute('w:styleId', styleId+'_'+index);
+                    var basedonStyle = nodes[node].getElementsByTagName('w:basedOn')[0];
+                    if(basedonStyle){
+                        var basedonStyleId = basedonStyle.getAttribute('w:val');
+                        basedonStyle.setAttribute('w:val',basedonStyleId+'_'+index);
+                    }
 
+                    var w_next = nodes[node].getElementsByTagName('w:next')[0];
+                    if(w_next){
+                        var w_next_ID = w_next.getAttribute('w:val');
+                        w_next.setAttribute('w:val',w_next_ID+'_'+index);
+                    }
+
+                    var w_link = nodes[node].getElementsByTagName('w:link')[0];
+                    if(w_link){
+                        var w_link_ID = w_link.getAttribute('w:val');
+                        w_link.setAttribute('w:val', w_link_ID+'_'+index);
+                    }
+                    
                     self.updateStyleRel_Content(zip, index, styleId);
                 }
             }
