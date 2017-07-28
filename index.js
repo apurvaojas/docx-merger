@@ -10,6 +10,7 @@ function DocxMerger(options, files) {
     this._footer = [];
     this._Basestyle = options.style || 'source';
     this._style = [];
+    this._numbering = [];
     this._pageBreak = options.pageBreak || true;
     this._files = [];
     var self = this;
@@ -47,6 +48,9 @@ function DocxMerger(options, files) {
         this.prepareMediaFiles(files);
         this.mergeRelations(files);
 
+        this.prepareNumbering(files);
+        this.mergeNumbering(files);
+
         this.prepareStyles(files);
         this.mergeStyles(files);
 
@@ -60,6 +64,83 @@ function DocxMerger(options, files) {
             self.insertRaw(xml);
             if (self._pageBreak)
                 self.insertPageBreak();
+        });
+    };
+
+    this.prepareNumbering = function(files) {
+        var self = this;
+        var serializer = new XMLSerializer();
+
+        files.forEach(function(zip, index) {
+            var xmlString = zip.file("word/numbering.xml").asText();
+            var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+            var nodes = xml.getElementsByTagName('w:abstractNum');
+
+            for (var node in nodes) {
+                if (/^\d+$/.test(node) && nodes[node].getAttribute) {
+                    var absID = nodes[node].getAttribute('w:abstractNumId');
+                    nodes[node].setAttribute('w:abstractNumId', absID + index);
+                    var pStyles = nodes[node].getElementsByTagName('w:pStyle');
+                    for (var pStyle in pStyles) {
+                        if (pStyles[pStyle].getAttribute) {
+                            var pStyleId = pStyles[pStyle].getAttribute('w:val');
+                            pStyles[pStyle].setAttribute('w:val', pStyleId + '_' + index);
+                        }
+                    }
+                    var styleLinks = nodes[node].getElementsByTagName('w:numStyleLink');
+                    for (var styleLink in styleLinks) {
+                        if (styleLinks[styleLink].getAttribute) {
+                            var styleLinkId = styleLinks[styleLink].getAttribute('w:val');
+                            styleLinks[styleLink].setAttribute('w:val', styleLinkId + '_' + index);
+                        }
+                    }
+
+                }
+            }
+
+            var numNodes = xml.getElementsByTagName('w:num');
+
+            for (var node in numNodes) {
+                if (/^\d+$/.test(node) && numNodes[node].getAttribute) {
+                    var ID = numNodes[node].getAttribute('w:numId');
+                    numNodes[node].setAttribute('w:numId', ID + index);
+                    var absrefID = numNodes[node].getElementsByTagName('w:abstractNumId');
+                    for (var i in absrefID) {
+                        if (absrefID[i].getAttribute) {
+                            var iId = absrefID[i].getAttribute('w:val');
+                            absrefID[i].setAttribute('w:val', iId + index);
+                        }
+                    }
+
+
+                }
+            }
+
+
+
+            var startIndex = xmlString.indexOf("<w:numbering ");
+            xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
+
+            zip.file("word/numbering.xml", xmlString);
+            // console.log(nodes);
+        });
+    };
+
+    this.mergeNumbering = function(files) {
+
+        // this._builder = this._style;
+
+        // console.log("MERGE__STYLES");
+        var self = this;
+
+        files.forEach(function(zip) {
+
+            var xml = zip.file("word/numbering.xml").asText();
+
+            xml = xml.substring(xml.indexOf("<w:abstractNum "), xml.indexOf("</w:numbering"));
+
+            self._numbering.push(xml);
+
         });
     };
 
@@ -81,12 +162,12 @@ function DocxMerger(options, files) {
         });
     };
 
-    this.prepareStyles = function(files){
+    this.prepareStyles = function(files) {
         var self = this;
         var style = this._styles;
         var serializer = new XMLSerializer();
 
-        files.forEach(function(zip, index){
+        files.forEach(function(zip, index) {
             var xmlString = zip.file("word/styles.xml").asText();
             var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
             var nodes = xml.getElementsByTagName('w:style');
@@ -94,25 +175,31 @@ function DocxMerger(options, files) {
             for (var node in nodes) {
                 if (/^\d+$/.test(node) && nodes[node].getAttribute) {
                     var styleId = nodes[node].getAttribute('w:styleId');
-                    nodes[node].setAttribute('w:styleId', styleId+'_'+index);
+                    nodes[node].setAttribute('w:styleId', styleId + '_' + index);
                     var basedonStyle = nodes[node].getElementsByTagName('w:basedOn')[0];
-                    if(basedonStyle){
+                    if (basedonStyle) {
                         var basedonStyleId = basedonStyle.getAttribute('w:val');
-                        basedonStyle.setAttribute('w:val',basedonStyleId+'_'+index);
+                        basedonStyle.setAttribute('w:val', basedonStyleId + '_' + index);
                     }
 
                     var w_next = nodes[node].getElementsByTagName('w:next')[0];
-                    if(w_next){
+                    if (w_next) {
                         var w_next_ID = w_next.getAttribute('w:val');
-                        w_next.setAttribute('w:val',w_next_ID+'_'+index);
+                        w_next.setAttribute('w:val', w_next_ID + '_' + index);
                     }
 
                     var w_link = nodes[node].getElementsByTagName('w:link')[0];
-                    if(w_link){
+                    if (w_link) {
                         var w_link_ID = w_link.getAttribute('w:val');
-                        w_link.setAttribute('w:val', w_link_ID+'_'+index);
+                        w_link.setAttribute('w:val', w_link_ID + '_' + index);
                     }
-                    
+
+                    var numId = nodes[node].getElementsByTagName('w:numId')[0];
+                    if (numId) {
+                        var numId_ID = numId.getAttribute('w:val');
+                        numId.setAttribute('w:val', numId_ID + index);
+                    }
+
                     self.updateStyleRel_Content(zip, index, styleId);
                 }
             }
@@ -125,14 +212,13 @@ function DocxMerger(options, files) {
         });
     };
 
-
     this.updateStyleRel_Content = function(zip, fileIndex, styleId) {
         var self = this;
 
         var xmlString = zip.file("word/document.xml").asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
-        xmlString = xmlString.replace(new RegExp('w:val="'+styleId+'"', 'g'), 'w:val="'+styleId+'_'+fileIndex+'"');
+        xmlString = xmlString.replace(new RegExp('w:val="' + styleId + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
 
         // zip.file("word/document.xml", "");
 
@@ -150,10 +236,10 @@ function DocxMerger(options, files) {
 
             for (var mfile in medFiles) {
                 if (/^word\/media/.test(mfile) && mfile.length > 11) {
-                     // console.log(mfile);
+                    // console.log(mfile);
                     media[count] = {};
                     media[count].oldTarget = mfile;
-                    media[count].newTarget = mfile.replace(/[0-9]/, '_'+count).replace('word/', "");
+                    media[count].newTarget = mfile.replace(/[0-9]/, '_' + count).replace('word/', "");
                     media[count].fileIndex = index;
                     self.updateMediaRelations(zip, count);
                     self.updateMediaContent(zip, count);
@@ -185,7 +271,7 @@ function DocxMerger(options, files) {
                     self._media[count].oldRelID = childNodes[node].getAttribute('Id');
 
                     childNodes[node].setAttribute('Target', self._media[count].newTarget);
-                    childNodes[node].setAttribute('Id', self._media[count].oldRelID+'_'+count);
+                    childNodes[node].setAttribute('Id', self._media[count].oldRelID + '_' + count);
                 }
             }
         }
@@ -206,7 +292,7 @@ function DocxMerger(options, files) {
         var xmlString = zip.file("word/document.xml").asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
-        xmlString = xmlString.replace(new RegExp(this._media[count].oldRelID+'"', 'g'), this._media[count].oldRelID+'_'+count+'"');
+        xmlString = xmlString.replace(new RegExp(this._media[count].oldRelID + '"', 'g'), this._media[count].oldRelID + '_' + count + '"');
 
         zip.file("word/document.xml", xmlString);
     };
@@ -268,6 +354,7 @@ function DocxMerger(options, files) {
         this.generateContentTypes(zip);
         this.copyMediaFiles(zip);
         this.generateRelations(zip);
+        this.generateNumbering(zip);
         this.generateStyles(zip);
 
         zip.file("word/document.xml", xml);
@@ -321,7 +408,23 @@ function DocxMerger(options, files) {
         zip.file("word/_rels/document.xml.rels", xmlString);
     };
 
-    this.generateStyles = function (zip) {
+    this.generateNumbering = function(zip) {
+        var xml = zip.file("word/numbering.xml").asText();
+        var startIndex = xml.indexOf("<w:abstractNum ");
+        var endIndex = xml.indexOf("</w:numbering>");
+
+        // console.log(xml.substring(startIndex, endIndex))
+
+        xml = xml.replace(xml.slice(startIndex, endIndex), this._numbering.join(''));
+
+        // console.log(xml.substring(xml.indexOf("</w:docDefaults>")+16, xml.indexOf("</w:styles>")))
+        // console.log(this._style.join(''))
+        // console.log(xml)
+
+        zip.file("word/numbering.xml", xml);
+    };
+
+    this.generateStyles = function(zip) {
         var xml = zip.file("word/styles.xml").asText();
         var startIndex = xml.indexOf("<w:style ");
         var endIndex = xml.indexOf("</w:styles>");

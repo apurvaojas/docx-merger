@@ -1,7 +1,7 @@
 {
   "name": "docx-merger",
   "version": "0.0.1",
-  "description": "Merge Docx File from NodeJS or Browser",
+  "description": "Merge Docx File in NodeJS or Browser",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
