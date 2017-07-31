@@ -87,7 +87,15 @@ function DocxMerger(options, files) {
                             pStyles[pStyle].setAttribute('w:val', pStyleId + '_' + index);
                         }
                     }
-                    var styleLinks = nodes[node].getElementsByTagName('w:numStyleLink');
+                    var numStyleLinks = nodes[node].getElementsByTagName('w:numStyleLink');
+                    for (var numstyleLink in numStyleLinks) {
+                        if (numStyleLinks[numstyleLink].getAttribute) {
+                            var styleLinkId = numStyleLinks[numstyleLink].getAttribute('w:val');
+                            numStyleLinks[numstyleLink].setAttribute('w:val', styleLinkId + '_' + index);
+                        }
+                    }
+
+                    var styleLinks = nodes[node].getElementsByTagName('w:styleLink');
                     for (var styleLink in styleLinks) {
                         if (styleLinks[styleLink].getAttribute) {
                             var styleLinkId = styleLinks[styleLink].getAttribute('w:val');
