@@ -73,7 +73,7 @@ var updateMediaContent = function(zip, count, _media) {
 
 var copyMediaFiles = function(base, _media, _files) {
 
-    for (var media in this._media) {
+    for (var media in _media) {
         var content = _files[_media[media].fileIndex].file(_media[media].oldTarget).asUint8Array();
 
         base.file('word/' + _media[media].newTarget, content);
