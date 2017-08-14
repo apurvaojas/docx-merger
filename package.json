@@ -1,10 +1,18 @@
 {
   "name": "docx-merger",
-  "version": "0.0.1",
-  "description": "Merge Docx File in NodeJS or Browser",
-  "main": "index.js",
+  "version": "1.0.0",
+  "description": "Javascript Library for Merging Docx file in NodeJS and Browser Environment.",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "commit": "git-cz",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "validate": "echo \"Check For Test Coverage\" && exit 0",
+    "prebuild": "rimraf dist",
+    "build": "npm-run-all --parallel build:*",
+    "build:main": "babel --copy-files --out-dir dist --ignore *.test.js src",
+    "build:umd": "webpack --output-filename index.umd.js",
+    "build:umd.min": "webpack --output-filename index.umd.min.js -p",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {
     "type": "git",
@@ -26,5 +34,33 @@
   "bugs": {
     "url": "https://github.com/apurvaojas/docx-merger/issues"
   },
-  "homepage": "https://github.com/apurvaojas/docx-merger#readme"
+  "homepage": "https://github.com/apurvaojas/docx-merger#readme",
+  "config": {
+    "ghooks": {
+      "pre-commit": "npm run validate"
+    },
+    "commitizen": {
+      "path": "node_modules/cz-conventional-changelog"
+    }
+  },
+  "babel": {
+    "presets": [
+      "es2015",
+      "stage-2"
+    ]
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-loader": "^7.1.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "babel-register": "^6.24.1",
+    "commitizen": "^2.9.6",
+    "cz-conventional-changelog": "^2.0.0",
+    "ghooks": "^2.0.0",
+    "npm-run-all": "^4.0.2",
+    "rimraf": "^2.6.1",
+    "semantic-release": "^6.3.6",
+    "webpack": "^3.5.4"
+  }
 }
