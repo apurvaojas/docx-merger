@@ -58,7 +58,8 @@ function DocxMerger(options, files) {
         Style.prepareStyles(files, this._style);
         Style.mergeStyles(files, this._style);
 
-        var i = 1;
+        var i = 1,
+            value;
         files.forEach(function (zip, index) {
             //var zip = new JSZip(file);
             var xml = zip.file("word/document.xml").asText();
@@ -71,6 +72,10 @@ function DocxMerger(options, files) {
 
             for (var node in numNodes) {
                 if (/^\d+$/.test(node) && numNodes[node].getAttribute) {
+                    if (numNodes[node].getAttribute('w:val') && value != numNodes[node].getAttribute('w:val')) {
+                        value = numNodes[node].getAttribute('w:val');
+                        i++;
+                    }
                     numNodes[node].setAttribute('w:val', i);
                 }
             }
