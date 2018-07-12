@@ -15,7 +15,7 @@ function DocxMerger(options, files) {
     this._Basestyle = options.style || 'source';
     this._style = [];
     this._numbering = [];
-    this._pageBreak = options.pageBreak || true;
+    this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
     this._files = [];
     var self = this;
     (files || []).forEach(function(file) {
