@@ -7,7 +7,11 @@ var prepareNumbering = function(files) {
     var serializer = new XMLSerializer();
 
     files.forEach(function(zip, index) {
-        var xmlString = zip.file("word/numbering.xml").asText();
+        var xmlBin = zip.file('word/numbering.xml');
+        if (!xmlBin) {
+            return;
+        }
+        var xmlString = xmlBin.asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var nodes = xml.getElementsByTagName('w:abstractNum');
 
@@ -77,8 +81,11 @@ var mergeNumbering = function(files, _numbering) {
 
 
     files.forEach(function(zip) {
-
-        var xml = zip.file("word/numbering.xml").asText();
+        var xmlBin = zip.file('word/numbering.xml');
+        if (!xmlBin) {
+          return;
+        }
+        var xml = xmlBin.asText();
 
         xml = xml.substring(xml.indexOf("<w:abstractNum "), xml.indexOf("</w:numbering"));
 
@@ -88,7 +95,11 @@ var mergeNumbering = function(files, _numbering) {
 };
 
 var generateNumbering = function(zip, _numbering) {
-    var xml = zip.file("word/numbering.xml").asText();
+    var xmlBin = zip.file('word/numbering.xml');
+    if (!xmlBin) {
+      return;
+    }
+    var xml = xmlBin.asText();
     var startIndex = xml.indexOf("<w:abstractNum ");
     var endIndex = xml.indexOf("</w:numbering>");
 
