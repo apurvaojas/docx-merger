@@ -18,7 +18,7 @@ function DocxMerger(options, files) {
     this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
     this._files = [];
     var self = this;
-    (files || []).forEach(function(file) {
+    (files || []).forEach(function (file) {
         self._files.push(new JSZip(file));
     });
     this._contentTypes = {};
@@ -28,7 +28,7 @@ function DocxMerger(options, files) {
 
     this._builder = this._body;
 
-    this.insertPageBreak = function() {
+    this.insertPageBreak = function () {
         var pb = '<w:p> \
 					<w:r> \
 						<w:br w:type="page"/> \
@@ -38,12 +38,12 @@ function DocxMerger(options, files) {
         this._builder.push(pb);
     };
 
-    this.insertRaw = function(xml) {
+    this.insertRaw = function (xml) {
 
         this._builder.push(xml);
     };
 
-    this.mergeBody = function(files) {
+    this.mergeBody = function (files) {
 
         var self = this;
         this._builder = this._body;
@@ -58,20 +58,39 @@ function DocxMerger(options, files) {
         Style.prepareStyles(files, this._style);
         Style.mergeStyles(files, this._style);
 
-        files.forEach(function(zip, index) {
+        var i = 1,
+            value;
+        files.forEach(function (zip, index) {
             //var zip = new JSZip(file);
             var xml = zip.file("word/document.xml").asText();
             xml = xml.substring(xml.indexOf("<w:body>") + 8);
             xml = xml.substring(0, xml.indexOf("</w:body>"));
             xml = xml.substring(0, xml.lastIndexOf("<w:sectPr"));
 
-            self.insertRaw(xml);
-            if (self._pageBreak && index < files.length-1)
+            var xmlDom = new DOMParser().parseFromString(xml, 'text/xml'),
+                numNodes = xmlDom.getElementsByTagName('w:numId');
+
+            for (var node in numNodes) {
+                if (/^\d+$/.test(node) && numNodes[node].getAttribute) {
+                    if (numNodes[node].getAttribute('w:val') && value != numNodes[node].getAttribute('w:val')) {
+                        value = numNodes[node].getAttribute('w:val');
+                        i++;
+                    }
+                    numNodes[node].setAttribute('w:val', i);
+                }
+            }
+            i++;
+
+            var xmlString = new XMLSerializer().serializeToString(xmlDom);
+            xmlString = xmlString.replace(/xmlns(.*?)=\"(.*?)\"/g, '');
+
+            self.insertRaw(xmlString);
+            if (self._pageBreak && index < files.length - 1)
                 self.insertPageBreak();
         });
     };
 
-    this.save = function(type, callback) {
+    this.save = function (type, callback) {
 
         var zip = this._files[0];
 
