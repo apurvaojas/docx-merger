@@ -1,8 +1,8 @@
-import {join} from 'path'
+const {join} = require('path');
 
 const include = join(__dirname, 'src')
 
-export default {
+module.exports = {
     entry: './src/index',
     output: {
         path: join(__dirname, 'dist'),
@@ -11,8 +11,8 @@ export default {
     },
     devtool: 'source-map',
     module: {
-        loaders: [
-            {test: /\.js$/, loader: 'babel-loader', include},
+        rules: [
+            {test: /\.js$/, loader: 'babel-loader', include, options: {presets: ['@babel/preset-env']}},
             {test: /\.json$/, 'loader': 'json', include},
         ]
     }
