@@ -14,7 +14,7 @@ jobs:
       script: npm run build
     - stage: test
       script: npm test
-      after_success: npm run coverage
+      after_script: npm run coverage
     - stage: release
       if: branch = master
       node_js: lts/*
@@ -22,7 +22,7 @@ jobs:
         provider: script
         skip_cleanup: true
         script:
-          -npx semantic-release
+          - npx semantic-release
 
 stages:
   - compile
