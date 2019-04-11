@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/apurvaojas/docx-merger/branch/master/graph/badge.svg)](https://codecov.io/gh/apurvaojas/docx-merger)  [![Build Status](https://travis-ci.org/apurvaojas/docx-merger.png)](https://travis-ci.org/apurvaojas/docx-merger)
+[![codecov](https://codecov.io/gh/apurvaojas/docx-merger/branch/master/graph/badge.svg)](https://codecov.io/gh/apurvaojas/docx-merger)  [![Build Status](https://travis-ci.org/apurvaojas/docx-merger.png)](https://travis-ci.org/apurvaojas/docx-merger)  [![Greenkeeper badge](https://badges.greenkeeper.io/apurvaojas/docx-merger.svg)](https://greenkeeper.io/)
 
 # Docx-merger
 
