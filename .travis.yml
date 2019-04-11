@@ -1,0 +1,30 @@
+language: node_js
+
+node_js:
+  -10
+  -8
+  -6
+
+
+
+jobs:
+  include:
+    # Define the release stage that runs semantic-release
+    - stage: compile
+      script: npm run build
+    - stage: test
+      script: npm test
+      after_success: npm run coverage
+    - stage: release
+      if: branch = master
+      node_js: lts/*
+      deploy:
+        provider: script
+        skip_cleanup: true
+        script:
+          -npx semantic-release
+
+stages:
+  - compile
+  - test
+  - release

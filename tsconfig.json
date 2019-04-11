@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "esnext",
+    "sourceMap": true,
+    "module": "umd",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "removeComments": true,
+    "rootDir": "./",
+    "baseUrl": "./",
+    "outFile": "./dist/index.d.ts"
+  },
+  "awesomeTypescriptLoaderOptions": {
+    "useBabel": true,
+    "babelCore": "@babel/core"
+  },
+  "exclude": [
+    "node_modules",
+    "packages/**/dist"
+  ]
+}
