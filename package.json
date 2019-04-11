@@ -30,14 +30,14 @@
       "**/webpack.config.js"
     ],
     "reporter": [
-      "json"
+      "text-lcov"
     ],
     "all": true  
   },
   "scripts": {
     "commit": "git-cz",
     "test": "cross-env NODE_ENV=test nyc mocha",
-    "coverage": "npx codecov",
+    "coverage": "nyc report --reporter=text-lcov | npx codecov",
     "prebuild": "rimraf dist",
     "build": "webpack",
     "postbuild": "npm run build:declarations",
