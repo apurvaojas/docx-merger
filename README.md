@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/apurvaojas/docx-merger/branch/master/graph/badge.svg)](https://codecov.io/gh/apurvaojas/docx-merger)  [![Build Status](https://travis-ci.org/apurvaojas/docx-merger.png)](https://travis-ci.org/apurvaojas/docx-merger)
+
 # Docx-merger
 
 Javascript Library for Merging Docx file in NodeJS and Browser Environment.
