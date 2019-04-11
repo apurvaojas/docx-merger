@@ -37,7 +37,7 @@
   "scripts": {
     "commit": "git-cz",
     "test": "cross-env NODE_ENV=test nyc mocha",
-    "coverage": "nyc report --reporter=text-lcov | npx codecov",
+    "coverage": "nyc report --reporter=text-lcov | npx codecov --pipe",
     "prebuild": "rimraf dist",
     "build": "webpack",
     "postbuild": "npm run build:declarations",
