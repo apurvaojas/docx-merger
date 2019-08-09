@@ -89,7 +89,13 @@ function DocxMerger(options, files) {
 
         zip.file("word/document.xml", xml);
 
-        callback(zip.generate({ type: type }));
+        callback(zip.generate({ 
+            type: type,
+            compression: "DEFLATE",
+            compressionOptions: {
+                level: 4
+            }
+        }));
     };
 
 
