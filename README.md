@@ -1,5 +1,7 @@
 # Docx-merger
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/apurvaojas/docx-merger.svg)](https://greenkeeper.io/)
+
 Javascript Library for Merging Docx file in NodeJS and Browser Environment.
 
 ## Purpose
