@@ -60,7 +60,7 @@ Then call the save function with first argument as `nodebuffer`, check the examp
 ### Usage Browser
 
   - Async Load files using `jszip-utils` and then call the callback in the innermost callback.
-  - Call the save function wit first argument as `blob`.
+  - Call the save function with first argument as `blob`.
   - Better use Promises instead of callbacks.
   - Callback causes callback hell issue.
 

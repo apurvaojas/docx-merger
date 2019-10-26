@@ -1,95 +1,87 @@
-var JSZip = require('jszip');
-var DOMParser = require('xmldom').DOMParser;
-var XMLSerializer = require('xmldom').XMLSerializer;
+import { mergeStyles, prepareStyles, generateStyles } from './merge-styles';
+import { mergeContentTypes, mergeRelations, generateContentTypes, generateRelations } from './merge-relations-and-content-type';
+import { prepareMediaFiles, copyMediaFiles } from './merge-media';
+import { prepareNumbering, mergeNumbering, generateNumbering } from './merge-bullets-numberings';
 
-var Style = require('./merge-styles');
-var Media = require('./merge-media');
-var RelContentType = require('./merge-relations-and-content-type');
-var bulletsNumbering = require('./merge-bullets-numberings');
+const JSZip = require('jszip');
 
-function DocxMerger(options, files) {
+export default DocxMerger = (options, files) => {
 
-    this._body = [];
-    this._header = [];
-    this._footer = [];
-    this._Basestyle = options.style || 'source';
-    this._style = [];
-    this._numbering = [];
-    this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
-    this._files = [];
-    var self = this;
-    (files || []).forEach(function(file) {
-        self._files.push(new JSZip(file));
+    const _body = [];
+    //const _header = [];
+    //const _footer = [];
+    //const _Basestyle = options.style || 'source';
+    const _style = [];
+    const _numbering = [];
+    const _pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
+    const _files = [];
+
+    (files || []).forEach(function (file) {
+        _files.push(new JSZip(file));
     });
-    this._contentTypes = {};
+    const _contentTypes = {};
+    const _media = {};
+    const _rel = {};
 
-    this._media = {};
-    this._rel = {};
+    let _builder = _body;
 
-    this._builder = this._body;
-
-    this.insertPageBreak = function() {
-        var pb = '<w:p> \
+    const insertPageBreak = () => {
+        const pb = '<w:p> \
 					<w:r> \
 						<w:br w:type="page"/> \
 					</w:r> \
 				  </w:p>';
 
-        this._builder.push(pb);
+        _builder.push(pb);
     };
 
-    this.insertRaw = function(xml) {
-
-        this._builder.push(xml);
+    const insertRaw = xml => {
+        _builder.push(xml);
     };
 
-    this.mergeBody = function(files) {
+    const mergeBody = (files) => {
+        _builder = _body;
 
-        var self = this;
-        this._builder = this._body;
+        mergeContentTypes(files, _contentTypes);
+        prepareMediaFiles(files, _media);
+        mergeRelations(files, _rel);
 
-        RelContentType.mergeContentTypes(files, this._contentTypes);
-        Media.prepareMediaFiles(files, this._media);
-        RelContentType.mergeRelations(files, this._rel);
+        prepareNumbering(files);
+        mergeNumbering(files, _numbering);
 
-        bulletsNumbering.prepareNumbering(files);
-        bulletsNumbering.mergeNumbering(files, this._numbering);
+        prepareStyles(files, _style);
+        mergeStyles(files, _style);
 
-        Style.prepareStyles(files, this._style);
-        Style.mergeStyles(files, this._style);
-
-        files.forEach(function(zip, index) {
-            //var zip = new JSZip(file);
-            var xml = zip.file("word/document.xml").asText();
+        files.forEach(function (zip, index) {
+            //let zip = new JSZip(file);
+            let xml = zip.file("word/document.xml").asText();
             xml = xml.substring(xml.indexOf("<w:body>") + 8);
             xml = xml.substring(0, xml.indexOf("</w:body>"));
             xml = xml.substring(0, xml.lastIndexOf("<w:sectPr"));
 
-            self.insertRaw(xml);
-            if (self._pageBreak && index < files.length-1)
-                self.insertPageBreak();
+            insertRaw(xml);
+            //if (_pageBreak && index < files.length-1)
+            //insertPageBreak();
         });
     };
 
-    this.save = function(type, callback) {
+    const save = (type, callback) => {
+        let zip = _files[0];
+        let xml = zip.file("word/document.xml").asText();
+        let startIndex = xml.indexOf("<w:body>") + 8;
+        let endIndex = xml.lastIndexOf("<w:sectPr");
 
-        var zip = this._files[0];
+        xml = xml.replace(xml.slice(startIndex, endIndex), _body.join(''));
 
-        var xml = zip.file("word/document.xml").asText();
-        var startIndex = xml.indexOf("<w:body>") + 8;
-        var endIndex = xml.lastIndexOf("<w:sectPr");
-
-        xml = xml.replace(xml.slice(startIndex, endIndex), this._body.join(''));
-
-        RelContentType.generateContentTypes(zip, this._contentTypes);
-        Media.copyMediaFiles(zip, this._media, this._files);
-        RelContentType.generateRelations(zip, this._rel);
-        bulletsNumbering.generateNumbering(zip, this._numbering);
-        Style.generateStyles(zip, this._style);
+        generateContentTypes(zip, _contentTypes);
+        copyMediaFiles(zip, _media, _files);
+        generateRelations(zip, _rel);
+        generateNumbering(zip, _numbering);
+        generateStyles(zip, _style);
 
         zip.file("word/document.xml", xml);
 
-        callback(zip.generate({ 
+        callback(zip.generate({
             type: type,
             compression: "DEFLATE",
             compressionOptions: {
@@ -99,11 +91,8 @@ function DocxMerger(options, files) {
     };
 
 
-    if (this._files.length > 0) {
+    if (_files.length > 0) {
+        mergeBody(_files);
+    };
+};
 
-        this.mergeBody(this._files);
-    }
-}
-
-
-module.exports = DocxMerger;

@@ -1,17 +1,15 @@
+const XMLSerializer = require('xmldom').XMLSerializer;
+const DOMParser = require('xmldom').DOMParser;
 
-var XMLSerializer = require('xmldom').XMLSerializer;
-var DOMParser = require('xmldom').DOMParser;
+export const prepareMediaFiles = (files, media) => {
 
+    let count = 1;
 
-var prepareMediaFiles = function(files, media) {
+    files.forEach(function (zip, index) {
+        // let zip = new JSZip(file);
+        const medFiles = zip.folder("word/media").files;
 
-       var count = 1;
-
-    files.forEach(function(zip, index) {
-        // var zip = new JSZip(file);
-        var medFiles = zip.folder("word/media").files;
-
-        for (var mfile in medFiles) {
+        for (let mfile in medFiles) {
             if (/^word\/media/.test(mfile) && mfile.length > 11) {
                 // console.log(mfile);
                 media[count] = {};
@@ -26,21 +24,20 @@ var prepareMediaFiles = function(files, media) {
     });
 
     // console.log(JSON.stringify(media));
-
-    // this.updateRelation(files);
+    // updateRelation(files);
 };
 
-var updateMediaRelations = function(zip, count, _media) {
+export const updateMediaRelations = (zip, count, _media) => {
 
-    var xmlString = zip.file("word/_rels/document.xml.rels").asText();
-    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+    let xmlString = zip.file("word/_rels/document.xml.rels").asText();
+    const xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
-    var childNodes = xml.getElementsByTagName('Relationships')[0].childNodes;
-    var serializer = new XMLSerializer();
+    const childNodes = xml.getElementsByTagName('Relationships')[0].childNodes;
+    const serializer = new XMLSerializer();
 
-    for (var node in childNodes) {
+    for (let node in childNodes) {
         if (/^\d+$/.test(node) && childNodes[node].getAttribute) {
-            var target = childNodes[node].getAttribute('Target');
+            let target = childNodes[node].getAttribute('Target');
             if ('word/' + target == _media[count].oldTarget) {
 
                 _media[count].oldRelID = childNodes[node].getAttribute('Id');
@@ -53,7 +50,7 @@ var updateMediaRelations = function(zip, count, _media) {
 
     // console.log(serializer.serializeToString(xml.documentElement));
 
-    var startIndex = xmlString.indexOf("<Relationships");
+    const startIndex = xmlString.indexOf("<Relationships");
     xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
 
     zip.file("word/_rels/document.xml.rels", xmlString);
@@ -61,28 +58,21 @@ var updateMediaRelations = function(zip, count, _media) {
     // console.log( xmlString );
 };
 
-var updateMediaContent = function(zip, count, _media) {
+export const updateMediaContent = (zip, count, _media) => {
 
-    var xmlString = zip.file("word/document.xml").asText();
-    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+    let xmlString = zip.file("word/document.xml").asText();
+    //const xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
     xmlString = xmlString.replace(new RegExp(_media[count].oldRelID + '"', 'g'), _media[count].oldRelID + '_' + count + '"');
 
     zip.file("word/document.xml", xmlString);
 };
 
-var copyMediaFiles = function(base, _media, _files) {
+export const copyMediaFiles = (base, _media, _files) => {
 
-    for (var media in _media) {
-        var content = _files[_media[media].fileIndex].file(_media[media].oldTarget).asUint8Array();
+    for (let media in _media) {
+        const content = _files[_media[media].fileIndex].file(_media[media].oldTarget).asUint8Array();
 
         base.file('word/' + _media[media].newTarget, content);
     }
-};
-
-module.exports = {
-    prepareMediaFiles: prepareMediaFiles,
-    updateMediaRelations: updateMediaRelations,
-    updateMediaContent: updateMediaContent,
-    copyMediaFiles: copyMediaFiles
 };
