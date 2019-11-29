@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     "removeComments": true,
     "rootDir": "./",
+    "typeRoots": ["./typings.d.ts", "./ltxml.d.ts","./node_modules/@types/"],
     "baseUrl": "./",
     "outFile": "./dist/index.d.ts"
   },

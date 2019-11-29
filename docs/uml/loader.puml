@@ -1,0 +1,12 @@
+@startuml DocxMerger
+title File Loader
+
+(*) --> [ Array<Blob|String>, isBinary?:Boolean] if "isFilePath?" then
+--> [ true] "Read File from File system"
+--> [ success] "unzipfile"
+"Read File from File system" --> [ failure] (*)
+else
+-> [ false] "unzipfile"
+endif
+--> [ Promise<Array<Blob>|Error>] (*)
+@enduml

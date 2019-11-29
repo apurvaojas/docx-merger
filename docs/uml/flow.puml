@@ -1,0 +1,51 @@
+@startuml DocxMerger
+title Hight Level Flow
+
+(*) --> [ Array<Blob|String>] "Loader..."
+note left
+ Takes input 
+  - Array of file paths
+  - Array of file Binaries(blobs)
+ Returns
+  - Array of file Binaries(blobs)
+ Check Page 2 For 
+ Loader Detailed Flow
+end note
+--> [ Array<Blob>] "Parser..."
+note right
+ Takes input 
+  - Array of file Binaries(blobs)
+ Returns
+  - Array of Docx Model
+Check Page 3 For 
+Parser Detailed Flow
+end note
+--> [ Array<Docx>] "Merger..."
+note left
+ Takes input 
+  - Array of Docx Model
+ Returns
+  - Merged Docx Model
+Check Page 4 For 
+Merger Detailed Flow
+end note
+--> [ Docx] "Generator..."
+note right
+ Takes input 
+  - Merged Docx Model
+ Returns
+  - Merged Docx Blob
+Check Page 4 For 
+Merger Detailed Flow
+end note
+--> [ Blob] "Save..."
+note left
+ Takes input 
+  - Merged Blob
+ Saves the file
+Check Page 5 For 
+Saving utils Detailed Flow
+end note
+--> [ file.docx] (*)
+
+@enduml
