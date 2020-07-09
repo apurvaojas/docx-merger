@@ -1,12 +1,12 @@
 var XMLSerializer = require('xmldom').XMLSerializer;
 var DOMParser = require('xmldom').DOMParser;
 
-var prepareStyles = function(files, style) {
+var prepareStyles = function (files, style) {
     // var self = this;
     // var style = this._styles;
     var serializer = new XMLSerializer();
 
-    files.forEach(function(zip, index) {
+    files.forEach(function (zip, index) {
         var xmlString = zip.file("word/styles.xml").asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var nodes = xml.getElementsByTagName('w:style');
@@ -51,11 +51,11 @@ var prepareStyles = function(files, style) {
     });
 };
 
-var mergeStyles = function(files, _styles) {
+var mergeStyles = function (files, _styles, mainStylesInFirstFile) {
 
-    files.forEach(function(zip) {
-
-        var xml = zip.file("word/styles.xml").asText();
+    files.forEach(function (zip, index) {
+        const file = mainStylesInFirstFile ? files[files.length - 1 - index] : zip;
+        var xml = file.file("word/styles.xml").asText();
 
         xml = xml.substring(xml.indexOf("<w:style "), xml.indexOf("</w:styles"));
 
@@ -64,7 +64,7 @@ var mergeStyles = function(files, _styles) {
     });
 };
 
-var updateStyleRel_Content = function(zip, fileIndex, styleId) {
+var updateStyleRel_Content = function (zip, fileIndex, styleId) {
 
 
     var xmlString = zip.file("word/document.xml").asText();
@@ -77,7 +77,7 @@ var updateStyleRel_Content = function(zip, fileIndex, styleId) {
     zip.file("word/document.xml", xmlString);
 };
 
-var generateStyles = function(zip, _style) {
+var generateStyles = function (zip, _style) {
     var xml = zip.file("word/styles.xml").asText();
     var startIndex = xml.indexOf("<w:style ");
     var endIndex = xml.indexOf("</w:styles>");

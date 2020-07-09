@@ -16,9 +16,10 @@ function DocxMerger(options, files) {
     this._style = [];
     this._numbering = [];
     this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
+    this._mainStylesInFirstFile = options.mainStylesInFirstFile;
     this._files = [];
     var self = this;
-    (files || []).forEach(function(file) {
+    (files || []).forEach(function (file) {
         self._files.push(new JSZip(file));
     });
     this._contentTypes = {};
@@ -28,7 +29,7 @@ function DocxMerger(options, files) {
 
     this._builder = this._body;
 
-    this.insertPageBreak = function() {
+    this.insertPageBreak = function () {
         var pb = '<w:p> \
 					<w:r> \
 						<w:br w:type="page"/> \
@@ -38,12 +39,12 @@ function DocxMerger(options, files) {
         this._builder.push(pb);
     };
 
-    this.insertRaw = function(xml) {
+    this.insertRaw = function (xml) {
 
         this._builder.push(xml);
     };
 
-    this.mergeBody = function(files) {
+    this.mergeBody = function (files) {
 
         var self = this;
         this._builder = this._body;
@@ -56,9 +57,9 @@ function DocxMerger(options, files) {
         bulletsNumbering.mergeNumbering(files, this._numbering);
 
         Style.prepareStyles(files, this._style);
-        Style.mergeStyles(files, this._style);
+        Style.mergeStyles(files, this._style, this._mainStylesInFirstFile);
 
-        files.forEach(function(zip, index) {
+        files.forEach(function (zip, index) {
             //var zip = new JSZip(file);
             var xml = zip.file("word/document.xml").asText();
             xml = xml.substring(xml.indexOf("<w:body>") + 8);
@@ -66,12 +67,12 @@ function DocxMerger(options, files) {
             xml = xml.substring(0, xml.lastIndexOf("<w:sectPr"));
 
             self.insertRaw(xml);
-            if (self._pageBreak && index < files.length-1)
+            if (self._pageBreak && index < files.length - 1)
                 self.insertPageBreak();
         });
     };
 
-    this.save = function(type, callback) {
+    this.save = function (type, callback) {
 
         var zip = this._files[0];
 
@@ -89,7 +90,7 @@ function DocxMerger(options, files) {
 
         zip.file("word/document.xml", xml);
 
-        callback(zip.generate({ 
+        callback(zip.generate({
             type: type,
             compression: "DEFLATE",
             compressionOptions: {
