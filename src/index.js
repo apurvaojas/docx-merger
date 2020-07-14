@@ -16,6 +16,7 @@ function DocxMerger(options, files) {
     this._style = [];
     this._numbering = [];
     this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
+    this._mainStylesInFirstFile = options.mainStylesInFirstFile;
     this._files = [];
     var self = this;
     (files || []).forEach(function(file) {
@@ -56,7 +57,7 @@ function DocxMerger(options, files) {
         bulletsNumbering.mergeNumbering(files, this._numbering);
 
         Style.prepareStyles(files, this._style);
-        Style.mergeStyles(files, this._style);
+        Style.mergeStyles(files, this._style, this._mainStylesInFirstFile);
 
         files.forEach(function(zip, index) {
             //var zip = new JSZip(file);

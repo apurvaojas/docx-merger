@@ -51,11 +51,11 @@ var prepareStyles = function(files, style) {
     });
 };
 
-var mergeStyles = function(files, _styles) {
+var mergeStyles = function(files, _styles, mainStylesInFirstFile    ) {
 
-    files.forEach(function(zip) {
-
-        var xml = zip.file("word/styles.xml").asText();
+    files.forEach(function(zip, index) {
+        var file = mainStylesInFirstFile ? files[files.length - 1 - index] : zip;
+        var xml = file.file("word/styles.xml").asText();
 
         xml = xml.substring(xml.indexOf("<w:style "), xml.indexOf("</w:styles"));
 
