@@ -68,7 +68,6 @@ var updateStyleRel_Content = function(zip, fileIndex, styleId) {
 
 
     var xmlString = zip.file("word/document.xml").asText();
-    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
     xmlString = xmlString.replace(new RegExp('w:val="' + styleId + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
 
