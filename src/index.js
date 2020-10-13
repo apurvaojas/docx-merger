@@ -9,101 +9,114 @@ var bulletsNumbering = require('./merge-bullets-numberings');
 
 function DocxMerger(options, files) {
 
-    this._body = [];
-    this._header = [];
-    this._footer = [];
-    this._Basestyle = options.style || 'source';
-    this._style = [];
-    this._numbering = [];
-    this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
-    this._mainStylesInFirstFile = options.mainStylesInFirstFile;
-    this._files = [];
-    var self = this;
-    (files || []).forEach(function(file) {
-        self._files.push(new JSZip(file));
-    });
-    this._contentTypes = {};
+  this._body = [];
+  this._header = [];
+  this._footer = [];
+  this._Basestyle = options.style || 'source';
+  this._style = [];
+  this._numbering = [];
+  this._numberingAttributes = [];
+  this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
+  this._mainStylesInFirstFile = options.mainStylesInFirstFile;
+  this._files = [];
+  var self = this;
+  (files || []).forEach(function (file) {
+    self._files.push(new JSZip(file));
+  });
+  this._contentTypes = {};
 
-    this._media = {};
-    this._rel = {};
+  this._media = {};
+  this._rel = {};
 
-    this._builder = this._body;
+  this._builder = this._body;
 
-    this.insertPageBreak = function() {
-        var pb = '<w:p> \
+  this.insertPageBreak = function () {
+    var pb = '<w:p> \
 					<w:r> \
 						<w:br w:type="page"/> \
 					</w:r> \
 				  </w:p>';
 
-        this._builder.push(pb);
-    };
+    this._builder.push(pb);
+  };
 
-    this.insertRaw = function(xml) {
+  this.insertRaw = function (xml) {
 
-        this._builder.push(xml);
-    };
-
-    this.mergeBody = function(files) {
-
-        var self = this;
-        this._builder = this._body;
-
-        RelContentType.mergeContentTypes(files, this._contentTypes);
-        Media.prepareMediaFiles(files, this._media);
-        RelContentType.mergeRelations(files, this._rel);
-
-        bulletsNumbering.prepareNumbering(files);
-        bulletsNumbering.mergeNumbering(files, this._numbering);
-
-        Style.prepareStyles(files, this._style);
-        Style.mergeStyles(files, this._style, this._mainStylesInFirstFile);
-
-        files.forEach(function(zip, index) {
-            //var zip = new JSZip(file);
-            var xml = zip.file("word/document.xml").asText();
-            xml = xml.substring(xml.indexOf("<w:body>") + 8);
-            xml = xml.substring(0, xml.indexOf("</w:body>"));
-            xml = xml.substring(0, xml.lastIndexOf("<w:sectPr"));
-
-            self.insertRaw(xml);
-            if (self._pageBreak && index < files.length-1)
-                self.insertPageBreak();
-        });
-    };
-
-    this.save = function(type, callback) {
-
-        var zip = this._files[0];
-
-        var xml = zip.file("word/document.xml").asText();
-        var startIndex = xml.indexOf("<w:body>") + 8;
-        var endIndex = xml.lastIndexOf("<w:sectPr");
-
-        xml = xml.replace(xml.slice(startIndex, endIndex), this._body.join(''));
-
-        RelContentType.generateContentTypes(zip, this._contentTypes);
-        Media.copyMediaFiles(zip, this._media, this._files);
-        RelContentType.generateRelations(zip, this._rel);
-        bulletsNumbering.generateNumbering(zip, this._numbering);
-        Style.generateStyles(zip, this._style);
-
-        zip.file("word/document.xml", xml);
-
-        callback(zip.generate({ 
-            type: type,
-            compression: "DEFLATE",
-            compressionOptions: {
-                level: 4
-            }
-        }));
-    };
-
-
-    if (this._files.length > 0) {
-
-        this.mergeBody(this._files);
+    this._builder.push(xml);
+  };
+  const updateNumbering = (xmlString, fileIndex) => {
+    var serializer = new XMLSerializer();
+    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+    var nodes = xml.getElementsByTagName('w:numId');
+    if (nodes.$$length) {
+      for (node in nodes) {
+        if (nodes[node].attributes) {
+          var numIdVal = nodes[node].getAttribute('w:val');
+          nodes[node].setAttribute('w:val', numIdVal + '99999' + fileIndex);
+        }
+      }
     }
+    return serializer.serializeToString(xml);
+  };
+  this.mergeBody = function (files) {
+
+    var self = this;
+    this._builder = this._body;
+
+    RelContentType.mergeContentTypes(files, this._contentTypes);
+    Media.prepareMediaFiles(files, this._media);
+    RelContentType.mergeRelations(files, this._rel);
+
+    bulletsNumbering.prepareNumbering(files);
+    bulletsNumbering.mergeNumbering(files, this._numbering, this._numberingAttributes);
+
+    Style.prepareStyles(files, this._style);
+    Style.mergeStyles(files, this._style, this._mainStylesInFirstFile);
+
+    files.forEach(function (zip, index) {
+      var xml = zip.file("word/document.xml").asText();
+      xml = updateNumbering(xml, index);
+      xml = xml.substring(xml.indexOf("<w:body>") + 8);
+      xml = xml.substring(0, xml.indexOf("</w:body>"));
+      xml = xml.substring(0, xml.lastIndexOf("<w:sectPr"));
+      self.insertRaw(xml);
+      if (self._pageBreak && index < files.length - 1)
+        self.insertPageBreak();
+    });
+  };
+
+  this.save = function (type, callback) {
+
+    var zip = this._files[0];
+
+    var xml = zip.file("word/document.xml").asText();
+    var startIndex = xml.indexOf("<w:body>") + 8;
+    var endIndex = xml.lastIndexOf("<w:sectPr");
+
+    xml = xml.replace(xml.slice(startIndex, endIndex), this._body.join(''));
+
+    RelContentType.generateContentTypes(zip, this._contentTypes);
+    Media.copyMediaFiles(zip, this._media, this._files);
+    RelContentType.generateRelations(zip, this._rel);
+    bulletsNumbering.generateNumbering(zip, this._numbering, this._numberingAttributes);
+    Style.generateStyles(zip, this._style);
+
+    zip.file("word/document.xml", xml);
+
+    callback(zip.generate({
+      type: type,
+      compression: "DEFLATE",
+      compressionOptions: {
+        level: 4
+      }
+    }));
+  };
+
+
+  if (this._files.length > 0) {
+
+    this.mergeBody(this._files);
+  }
 }
 
 

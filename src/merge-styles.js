@@ -1,12 +1,12 @@
 var XMLSerializer = require('xmldom').XMLSerializer;
 var DOMParser = require('xmldom').DOMParser;
 
-var prepareStyles = function(files, style) {
+var prepareStyles = function (files, style) {
     // var self = this;
     // var style = this._styles;
     var serializer = new XMLSerializer();
 
-    files.forEach(function(zip, index) {
+    files.forEach(function (zip, index) {
         var xmlString = zip.file("word/styles.xml").asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var nodes = xml.getElementsByTagName('w:style');
@@ -36,7 +36,7 @@ var prepareStyles = function(files, style) {
                 var numId = nodes[node].getElementsByTagName('w:numId')[0];
                 if (numId) {
                     var numId_ID = numId.getAttribute('w:val');
-                    numId.setAttribute('w:val', numId_ID + index);
+                    numId.setAttribute('w:val', numId_ID + '_' + index);
                 }
 
                 updateStyleRel_Content(zip, index, styleId);
@@ -51,9 +51,9 @@ var prepareStyles = function(files, style) {
     });
 };
 
-var mergeStyles = function(files, _styles, mainStylesInFirstFile    ) {
+var mergeStyles = function (files, _styles, mainStylesInFirstFile) {
 
-    files.forEach(function(zip, index) {
+    files.forEach(function (zip, index) {
         var file = mainStylesInFirstFile ? files[files.length - 1 - index] : zip;
         var xml = file.file("word/styles.xml").asText();
 
@@ -64,20 +64,27 @@ var mergeStyles = function(files, _styles, mainStylesInFirstFile    ) {
     });
 };
 
-var updateStyleRel_Content = function(zip, fileIndex, styleId) {
-
-
+var updateStyleRel_Content = function (zip, fileIndex, styleId) {
+    var serializer = new XMLSerializer();
     var xmlString = zip.file("word/document.xml").asText();
     var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
-
-    xmlString = xmlString.replace(new RegExp('w:val="' + styleId + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
-
-    // zip.file("word/document.xml", "");
-
+    var nodes = xml.getElementsByTagName('w:pStyle');
+    if (!nodes.$$length) return;
+    for (node in nodes) {
+        if (nodes[node].attributes) {
+            var pStyleVal = nodes[node].getAttribute('w:val');
+            if (pStyleVal === styleId) {
+                nodes[node].setAttribute('w:val', styleId + '_' + fileIndex);
+                // console.log(pStyleVal, '=>', styleId + '_' + fileIndex);
+            }
+        }
+    }
+    var startIndex = xmlString.indexOf("<w:document ");
+    xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
     zip.file("word/document.xml", xmlString);
 };
 
-var generateStyles = function(zip, _style) {
+var generateStyles = function (zip, _style) {
     var xml = zip.file("word/styles.xml").asText();
     var startIndex = xml.indexOf("<w:style ");
     var endIndex = xml.indexOf("</w:styles>");
