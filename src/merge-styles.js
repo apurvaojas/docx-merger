@@ -70,7 +70,7 @@ var updateStyleRel_Content = function (zip, fileIndex, styleId) {
     var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
     var nodes = xml.getElementsByTagName('w:pStyle');
     if (!nodes.$$length) return;
-    for (node in nodes) {
+    for (let node in nodes) {
         if (nodes[node].attributes) {
             var pStyleVal = nodes[node].getAttribute('w:val');
             if (pStyleVal === styleId) {

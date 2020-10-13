@@ -49,7 +49,7 @@ function DocxMerger(options, files) {
     var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
     var nodes = xml.getElementsByTagName('w:numId');
     if (nodes.$$length) {
-      for (node in nodes) {
+      for (let node in nodes) {
         if (nodes[node].attributes) {
           var numIdVal = nodes[node].getAttribute('w:val');
           nodes[node].setAttribute('w:val', numIdVal + '99999' + fileIndex);
