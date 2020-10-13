@@ -70,7 +70,7 @@ var mergeNumbering = function (files, _numbering, _numberingAttributes) {
     var xmlBin = zip.file('word/numbering.xml');
     if (!xmlBin) return;
     var xml = xmlBin.asText();
-    xmlNum = xml.substring(xml.indexOf("<w:abstractNum "), xml.indexOf("</w:numbering"));
+    const xmlNum = xml.substring(xml.indexOf("<w:abstractNum "), xml.indexOf("</w:numbering"));
     _numbering.push(xmlNum);
 
     const xmlAttr = xml.substring(xml.indexOf("xmlns:"), xml.indexOf(">", xml.indexOf("xmlns")));
