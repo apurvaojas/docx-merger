@@ -7,7 +7,7 @@ const prepareBodies = (files) => {
     var xmlStr = zip.file("word/document.xml").asText();
     xmlStr = xmlStr.substring(xmlStr.indexOf("<w:body>") + 8, xmlStr.lastIndexOf("</w:body>"));
     if (!index) { bodies.push(xmlStr); return; }
-    xmlStr = xmlStr.replace(/<w:sectPr.*? <\/w:sectPr>/g,'');
+    xmlStr = xmlStr.replace(/<w:sectPr.*?<\/w:sectPr>/g, '');
     xmlStr = xmlStr.replace(/<w:bookmark(Start|End).*?"\/>/g, '');
     xmlStr = xmlStr.replace(/<w:commentRange(Start|End).*?"\/>/g, '');
     xmlStr = xmlStr.replace(/<w:commentReference.*?"\/>/g, '');
@@ -20,10 +20,19 @@ const prepareBodies = (files) => {
 }
 
 const generateBody = (zip, bodies) => {
-  let xml = zip.file("word/document.xml").asText();
-  const lastPart = xml.substring(xml.lastIndexOf("<w:sectPr"));
-  xml = xml.replace(lastPart, bodies.join('')) + lastPart;
-  zip.file("word/document.xml", xml);
+  let xmlStr = zip.file("word/document.xml").asText();
+
+  const lastPart = bodies[0].substring(bodies[0].lastIndexOf("<w:sectPr")) + '</w:body>';
+  let result = "";
+  bodies.map((body, index) => {
+    if (!index) {
+      result += body.slice(0, body.lastIndexOf("<w:sectPr"));
+      return;
+    }
+    result += body;
+  })
+  xmlStr = xmlStr.replace(/<w:body>.*?<\/w:body>/, '<w:body>' + result + lastPart);
+  zip.file("word/document.xml", xmlStr);
 }
 
 module.exports = {
