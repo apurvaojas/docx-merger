@@ -28,7 +28,7 @@ const prepareStyles = (files) => {
 
 const generateStyles = (zip, styles) => {
   var xmlString = zip.file("word/styles.xml").asText();
-  xmlString = xmlString.replace("</w:styles>", styles.join('') + "</w:styles>");
+  xmlString = xmlString.replace(/<w:style .*?<\/w:styles>/, styles.join('') + "</w:styles>");
   zip.file("word/styles.xml", xmlString);
 };
 
