@@ -38,7 +38,7 @@ Read input files as binary and pass it to the `DocxMerger` constructor fuction a
 Then call the save function with first argument as `nodebuffer`, check the example below.
 
   ```javascript
-  const DocxMerger = require('docx-merger');
+  const DocxMerger = require('@scholarcy/docx-merger');
 
   const fs = require('fs');
   const path = require('path');
