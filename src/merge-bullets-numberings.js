@@ -1,43 +1,42 @@
-var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
-var DOMParser = require('@xmldom/xmldom').DOMParser;
+const {XMLSerializer} = require('@xmldom/xmldom');
+const {DOMParser} = require('@xmldom/xmldom');
 
 
-var prepareNumbering = function(files) {
+const prepareNumbering = function(files) {
+    const serializer = new XMLSerializer();
 
-    var serializer = new XMLSerializer();
-
-    files.forEach(function(zip, index) {
-        var xmlBin = zip.file('word/numbering.xml');
+    files.forEach(async function(zip, index) {
+        const xmlBin = zip.file('word/numbering.xml');
         if (!xmlBin) {
             return;
         }
-        var xmlString = xmlBin.asText();
-        var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
-        var nodes = xml.getElementsByTagName('w:abstractNum');
+        let xmlString = await xmlBin.async('string');
+        const xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+        const nodes = xml.getElementsByTagName('w:abstractNum');
 
-        for (var node in nodes) {
+        for (const node in nodes) {
             if (/^\d+$/.test(node) && nodes[node].getAttribute) {
-                var absID = nodes[node].getAttribute('w:abstractNumId');
+                const absID = nodes[node].getAttribute('w:abstractNumId');
                 nodes[node].setAttribute('w:abstractNumId', absID + index);
-                var pStyles = nodes[node].getElementsByTagName('w:pStyle');
-                for (var pStyle in pStyles) {
+                const pStyles = nodes[node].getElementsByTagName('w:pStyle');
+                for (const pStyle in pStyles) {
                     if (pStyles[pStyle].getAttribute) {
-                        var pStyleId = pStyles[pStyle].getAttribute('w:val');
+                        const pStyleId = pStyles[pStyle].getAttribute('w:val');
                         pStyles[pStyle].setAttribute('w:val', pStyleId + '_' + index);
                     }
                 }
-                var numStyleLinks = nodes[node].getElementsByTagName('w:numStyleLink');
-                for (var numstyleLink in numStyleLinks) {
+                const numStyleLinks = nodes[node].getElementsByTagName('w:numStyleLink');
+                for (const numstyleLink in numStyleLinks) {
                     if (numStyleLinks[numstyleLink].getAttribute) {
-                        var styleLinkId = numStyleLinks[numstyleLink].getAttribute('w:val');
+                        const styleLinkId = numStyleLinks[numstyleLink].getAttribute('w:val');
                         numStyleLinks[numstyleLink].setAttribute('w:val', styleLinkId + '_' + index);
                     }
                 }
 
-                var styleLinks = nodes[node].getElementsByTagName('w:styleLink');
-                for (var styleLink in styleLinks) {
+                const styleLinks = nodes[node].getElementsByTagName('w:styleLink');
+                for (const styleLink in styleLinks) {
                     if (styleLinks[styleLink].getAttribute) {
-                        var styleLinkId = styleLinks[styleLink].getAttribute('w:val');
+                        const styleLinkId = styleLinks[styleLink].getAttribute('w:val');
                         styleLinks[styleLink].setAttribute('w:val', styleLinkId + '_' + index);
                     }
                 }
@@ -45,16 +44,16 @@ var prepareNumbering = function(files) {
             }
         }
 
-        var numNodes = xml.getElementsByTagName('w:num');
+        const numNodes = xml.getElementsByTagName('w:num');
 
-        for (var node in numNodes) {
+        for (const node in numNodes) {
             if (/^\d+$/.test(node) && numNodes[node].getAttribute) {
-                var ID = numNodes[node].getAttribute('w:numId');
+                const ID = numNodes[node].getAttribute('w:numId');
                 numNodes[node].setAttribute('w:numId', ID + index);
-                var absrefID = numNodes[node].getElementsByTagName('w:abstractNumId');
-                for (var i in absrefID) {
+                const absrefID = numNodes[node].getElementsByTagName('w:abstractNumId');
+                for (const i in absrefID) {
                     if (absrefID[i].getAttribute) {
-                        var iId = absrefID[i].getAttribute('w:val');
+                        const iId = absrefID[i].getAttribute('w:val');
                         absrefID[i].setAttribute('w:val', iId + index);
                     }
                 }
@@ -63,55 +62,37 @@ var prepareNumbering = function(files) {
             }
         }
 
-
-
-        var startIndex = xmlString.indexOf("<w:numbering ");
+        const startIndex = xmlString.indexOf("<w:numbering ");
         xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
 
         zip.file("word/numbering.xml", xmlString);
-        // console.log(nodes);
     });
 };
 
-var mergeNumbering = function(files, _numbering) {
-
-    // this._builder = this._style;
-
-    // console.log("MERGE__STYLES");
-
-
-    files.forEach(function(zip) {
-        var xmlBin = zip.file('word/numbering.xml');
+const mergeNumbering = function(files, _numbering) {
+    files.forEach(async function(zip) {
+        const xmlBin = zip.file('word/numbering.xml');
         if (!xmlBin) {
           return;
         }
-        var xml = xmlBin.asText();
-
-        xml = xml.substring(xml.indexOf("<w:abstractNum "), xml.indexOf("</w:numbering"));
-
-        _numbering.push(xml);
-
+        let xmlString = await xmlBin.async('string');
+        xmlString = xmlString.substring(xmlString.indexOf("<w:abstractNum "), xmlString.indexOf("</w:numbering"));
+        _numbering.push(xmlString);
     });
 };
 
-var generateNumbering = function(zip, _numbering) {
-    var xmlBin = zip.file('word/numbering.xml');
+const generateNumbering = async function(zip, _numbering) {
+    const xmlBin = zip.file('word/numbering.xml');
     if (!xmlBin) {
       return;
     }
-    var xml = xmlBin.asText();
-    var startIndex = xml.indexOf("<w:abstractNum ");
-    var endIndex = xml.indexOf("</w:numbering>");
+    let xmlString = await xmlBin.async('string');
+    const startIndex = xmlString.indexOf("<w:abstractNum ");
+    const endIndex = xmlString.indexOf("</w:numbering>");
 
-    // console.log(xml.substring(startIndex, endIndex))
+    xmlString = xmlString.replace(xmlString.slice(startIndex, endIndex), _numbering.join(''));
 
-    xml = xml.replace(xml.slice(startIndex, endIndex), _numbering.join(''));
-
-    // console.log(xml.substring(xml.indexOf("</w:docDefaults>")+16, xml.indexOf("</w:styles>")))
-    // console.log(this._style.join(''))
-    // console.log(xml)
-
-    zip.file("word/numbering.xml", xml);
+    zip.file("word/numbering.xml", xmlString);
 };
 
 

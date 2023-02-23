@@ -1,6 +1,6 @@
 {
   "name": "docx-merger",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "description": "Javascript Library for Merging Docx file in NodeJS and Browser Environment.",
   "main": "dist/index.cjs.js",
@@ -32,7 +32,7 @@
   "author": "Scholarcy Developers <developers@scholarcy.com>",
   "dependencies": {
     "@xmldom/xmldom": "^0.8.6",
-    "jszip": "^2.6.1"
+    "jszip": "^3.10.1"
   },
   "bugs": {
     "url": "https://github.com/scholarcy/docx-merger/issues"

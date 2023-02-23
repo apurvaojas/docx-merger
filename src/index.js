@@ -1,35 +1,41 @@
-var JSZip = require('jszip');
-var DOMParser = require('@xmldom/xmldom').DOMParser;
-var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
+const JSZip = require('jszip');
+const Style = require('./merge-styles');
+const Media = require('./merge-media');
+const RelContentType = require('./merge-relations-and-content-type');
+const bulletsNumbering = require('./merge-bullets-numberings');
 
-var Style = require('./merge-styles');
-var Media = require('./merge-media');
-var RelContentType = require('./merge-relations-and-content-type');
-var bulletsNumbering = require('./merge-bullets-numberings');
 
-function DocxMerger(options, files) {
+class DocxMerger {
+    constructor () {
+        this._body = [];
+        this._header = [];
+        this._footer = [];
+        this._pageBreak = true;
+        this._Basestyle = 'source';
+        this._style = [];
+        this._numbering = [];
+        this._files = [];
+        this._contentTypes = {};
+        this._media = {};
+        this._rel = {};
+        this._builder = this._body;
+    }
 
-    this._body = [];
-    this._header = [];
-    this._footer = [];
-    this._Basestyle = options.style || 'source';
-    this._style = [];
-    this._numbering = [];
-    this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
-    this._files = [];
-    var self = this;
-    (files || []).forEach(function(file) {
-        self._files.push(new JSZip(file));
-    });
-    this._contentTypes = {};
+    async initialize(options, files) {
+        files = files || [];
+        this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
+        this._Basestyle = options.style || 'source';
 
-    this._media = {};
-    this._rel = {};
+        for(const file of files) {
+            this._files.push(await new JSZip().loadAsync(file));
+        }
+        if(this._files.length > 0) {
+            this.mergeBody(this._files)
+        }
+    }
 
-    this._builder = this._body;
-
-    this.insertPageBreak = function() {
-        var pb = '<w:p> \
+    insertPageBreak = function() {
+        const pb = '<w:p> \
 					<w:r> \
 						<w:br w:type="page"/> \
 					</w:r> \
@@ -38,14 +44,11 @@ function DocxMerger(options, files) {
         this._builder.push(pb);
     };
 
-    this.insertRaw = function(xml) {
-
+    insertRaw = function(xml) {
         this._builder.push(xml);
     };
 
-    this.mergeBody = function(files) {
-
-        var self = this;
+    mergeBody(files) {
         this._builder = this._body;
 
         RelContentType.mergeContentTypes(files, this._contentTypes);
@@ -54,56 +57,47 @@ function DocxMerger(options, files) {
 
         bulletsNumbering.prepareNumbering(files);
         bulletsNumbering.mergeNumbering(files, this._numbering);
-
         Style.prepareStyles(files, this._style);
         Style.mergeStyles(files, this._style);
 
-        files.forEach(function(zip, index) {
-            //var zip = new JSZip(file);
-            var xml = zip.file("word/document.xml").asText();
-            xml = xml.substring(xml.indexOf("<w:body>") + 8);
-            xml = xml.substring(0, xml.indexOf("</w:body>"));
-            xml = xml.substring(0, xml.lastIndexOf("<w:sectPr"));
+        files.forEach(async(zip, index) => {
+            let xmlString = await zip.file("word/document.xml").async('string');
+            xmlString = xmlString.substring(xmlString.indexOf("<w:body>") + 8);
+            xmlString = xmlString.substring(0, xmlString.indexOf("</w:body>"));
+            xmlString = xmlString.substring(0, xmlString.lastIndexOf("<w:sectPr"));
 
-            self.insertRaw(xml);
-            if (self._pageBreak && index < files.length-1)
-                self.insertPageBreak();
+            this.insertRaw(xmlString);
+            if (this._pageBreak && index < files.length-1)
+                this.insertPageBreak();
         });
     };
 
-    this.save = function(type, callback) {
+    async save(type) {
+        const zip = this._files[0];
 
-        var zip = this._files[0];
+        let xmlString = await zip.file("word/document.xml").async('string');
 
-        var xml = zip.file("word/document.xml").asText();
-        var startIndex = xml.indexOf("<w:body>") + 8;
-        var endIndex = xml.lastIndexOf("<w:sectPr");
+        const startIndex = xmlString.indexOf("<w:body>") + 8;
+        const endIndex = xmlString.lastIndexOf("<w:sectPr");
 
-        xml = xml.replace(xml.slice(startIndex, endIndex), this._body.join(''));
+        xmlString = xmlString.replace(xmlString.slice(startIndex, endIndex), this._body.join(''));
 
-        RelContentType.generateContentTypes(zip, this._contentTypes);
-        Media.copyMediaFiles(zip, this._media, this._files);
-        RelContentType.generateRelations(zip, this._rel);
-        bulletsNumbering.generateNumbering(zip, this._numbering);
-        Style.generateStyles(zip, this._style);
+        await RelContentType.generateContentTypes(zip, this._contentTypes);
+        await Media.copyMediaFiles(zip, this._media, this._files);
+        await RelContentType.generateRelations(zip, this._rel);
+        await bulletsNumbering.generateNumbering(zip, this._numbering);
+        await Style.generateStyles(zip, this._style);
 
-        zip.file("word/document.xml", xml);
+        zip.file("word/document.xml", xmlString);
 
-        callback(zip.generate({
+        return await zip.generateAsync({
             type: type,
             compression: "DEFLATE",
             compressionOptions: {
                 level: 4
             }
-        }));
+        })
     };
-
-
-    if (this._files.length > 0) {
-
-        this.mergeBody(this._files);
-    }
 }
-
 
 module.exports = DocxMerger;

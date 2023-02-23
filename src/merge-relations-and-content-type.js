@@ -1,80 +1,70 @@
-
-var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
-var DOMParser = require('@xmldom/xmldom').DOMParser;
-
-
-var mergeContentTypes = function(files, _contentTypes) {
+const {XMLSerializer} = require('@xmldom/xmldom');
+const {DOMParser} = require('@xmldom/xmldom');
 
 
-    files.forEach(function(zip) {
-        // var zip = new JSZip(file);
-        var xmlString = zip.file("[Content_Types].xml").asText();
-        var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+const mergeContentTypes = function(files, _contentTypes) {
+    files.forEach(async (zip) => {
+        const xmlString = await zip.file("[Content_Types].xml").async('string');
+        const xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
-        var childNodes = xml.getElementsByTagName('Types')[0].childNodes;
+        const childNodes = xml.getElementsByTagName('Types')[0].childNodes;
 
-        for (var node in childNodes) {
+        for (const node in childNodes) {
             if (/^\d+$/.test(node) && childNodes[node].getAttribute) {
-                var contentType = childNodes[node].getAttribute('ContentType');
+                const contentType = childNodes[node].getAttribute('ContentType');
                 if (!_contentTypes[contentType])
                     _contentTypes[contentType] = childNodes[node].cloneNode();
             }
         }
-
     });
 };
 
-var mergeRelations = function(files, _rel) {
+const mergeRelations = function(files, _rel) {
+    files.forEach(async (zip) => {
+        const xmlString = await zip.file("word/_rels/document.xml.rels").async('string');
+        const xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
-    files.forEach(function(zip) {
-        // var zip = new JSZip(file);
-        var xmlString = zip.file("word/_rels/document.xml.rels").asText();
-        var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+        const childNodes = xml.getElementsByTagName('Relationships')[0].childNodes;
 
-        var childNodes = xml.getElementsByTagName('Relationships')[0].childNodes;
-
-        for (var node in childNodes) {
+        for (const node in childNodes) {
             if (/^\d+$/.test(node) && childNodes[node].getAttribute) {
-                var Id = childNodes[node].getAttribute('Id');
+                const Id = childNodes[node].getAttribute('Id');
                 if (!_rel[Id])
                     _rel[Id] = childNodes[node].cloneNode();
             }
         }
-
     });
 };
 
-var generateContentTypes = function(zip, _contentTypes) {
-    // body...
-    var xmlString = zip.file("[Content_Types].xml").asText();
-    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
-    var serializer = new XMLSerializer();
+const generateContentTypes = async function(zip, _contentTypes) {
+    let xmlString = await zip.file("[Content_Types].xml").async('string');
+    const xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+    const serializer = new XMLSerializer();
 
-    var types = xml.documentElement.cloneNode();
+    const types = xml.documentElement.cloneNode();
 
-    for (var node in _contentTypes) {
+    for (const node in _contentTypes) {
         types.appendChild(_contentTypes[node]);
     }
 
-    var startIndex = xmlString.indexOf("<Types");
+    const startIndex = xmlString.indexOf("<Types");
     xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
 
     zip.file("[Content_Types].xml", xmlString);
 };
 
-var generateRelations = function(zip, _rel) {
-    // body...
-    var xmlString = zip.file("word/_rels/document.xml.rels").asText();
-    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
-    var serializer = new XMLSerializer();
+const generateRelations = async function(zip, _rel) {
+    let xmlString = await zip.file("word/_rels/document.xml.rels").async('string');
+    const xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+    const serializer = new XMLSerializer();
 
-    var types = xml.documentElement.cloneNode();
+    const types = xml.documentElement.cloneNode();
 
-    for (var node in _rel) {
+    for (const node in _rel) {
         types.appendChild(_rel[node]);
     }
 
-    var startIndex = xmlString.indexOf("<Relationships");
+    const startIndex = xmlString.indexOf("<Relationships");
     xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
 
     zip.file("word/_rels/document.xml.rels", xmlString);
