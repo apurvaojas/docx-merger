@@ -1,6 +1,11 @@
 # Docx-merger
 
-Javascript Library for Merging Docx file in NodeJS and Browser Environment.
+Javascript Library for Merging Docx files.
+This is a fork of https://github.com/apurvaojas/docx-merge with updated dependencies.
+
+It's only been tested with NodeJS but according to the original authors it should work in the browser too.
+
+The fork has replaced webpack with esbuild as the build tool, and yarn for npm.
 
 ## Purpose
 
@@ -21,124 +26,42 @@ Javascript Library for Merging Docx file in NodeJS and Browser Environment.
 
 
   ```bash
-  npm install docx-merger
+  npm install @scholarcy/docx-merger
   ```
 
 **[Back to top](#table-of-contents)**
 
-### Usage Nodejs
+### Usage in Nodejs
 
 Read input files as binary and pass it to the `DocxMerger` constructor fuction as a array of files.
 
 Then call the save function with first argument as `nodebuffer`, check the example below.
 
   ```javascript
-  var DocxMerger = require('docx-merger');
+  const DocxMerger = require('./../src/index');
 
-  var fs = require('fs');
-  var path = require('path');
+const fs = require('fs');
+const path = require('path');
 
-  var file1 = fs
-      .readFileSync(path.resolve(__dirname, 'template.docx'), 'binary');
-
-  var file2 = fs
-      .readFileSync(path.resolve(__dirname, 'template1.docx'), 'binary');
-
-  var docx = new DocxMerger({},[file1,file2]);
-
-
-  //SAVING THE DOCX FILE
-
-  docx.save('nodebuffer',function (data) {
-      // fs.writeFile("output.zip", data, function(err){/*...*/});
-      fs.writeFile("output.docx", data, function(err){/*...*/});
-  });
+(async () => {
+    const file1 = fs.readFileSync(path.resolve(__dirname, 'template.docx'), 'binary');
+    const file2 = fs.readFileSync(path.resolve(__dirname, 'template1.docx'), 'binary');
+    const docx = new DocxMerger();
+    await docx.initialize({},[file1,file2]);
+    //SAVING THE DOCX FILE
+    const data = await docx.save('nodebuffer');
+    await fs.writeFile("output.zip", data);
+    await fs.writeFile("output.docx", data);
+})()
   ```
 
 **[Back to top](#table-of-contents)**
-
-### Usage Browser
-
-  - Async Load files using `jszip-utils` and then call the callback in the innermost callback.
-  - Call the save function wit first argument as `blob`.
-  - Better use Promises instead of callbacks.
-  - Callback causes callback hell issue.
-
-###### Using Callback
-  ```html
-<html>
-<script src="../dist/docx-merger.min.js"></script>
-<script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip-utils/0.0.2/jszip-utils.min.js"></script>
-<!--
-Mandatory in IE 6, 7, 8 and 9.
--->
-<!--[if IE]>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip-utils/0.0.2/jszip-utils-ie.min.js"></script>
-<![endif]-->
-<script>
-    function loadFile(url,callback){
-        JSZipUtils.getBinaryContent(url,callback);
-    }
-    loadFile("template.docx",function(error,file1){
-        loadFile("template1.docx",function(error,file2){
-
-            var docx = new DocxMerger({},[file1,file2]);
-
-            docx.save('blob',function (data) {
-                saveAs(data,"output.docx");
-            });
-        })
-    })
-</script>
-</html>
-  ```
-
-
-###### Using Promise
-  ```html
-<html>
-<script src="../dist/docx-merger.min.js"></script>
-<script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip-utils/0.0.2/jszip-utils.min.js"></script>
-<!--
-Mandatory in IE 6, 7, 8 and 9.
--->
-<!--[if IE]>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip-utils/0.0.2/jszip-utils-ie.min.js"></script>
-<![endif]-->
-<script>
-    function loadFile(url,callback) {
-
-        return new Promise(function (resolve, reject) {
-
-            JSZipUtils.getBinaryContent(url, function (err, data) {
-                if (err) reject(err);
-                resolve(data);
-            });
-        });
-    }
-    Promise.all([loadFile("template.docx"), loadFile("template1.docx")]).then(function(files){
-
-        var docx = new DocxMerger({},files);
-
-        docx.save('blob',function (data) {
-            saveAs(data,"output.docx");
-        });
-
-    },function (err) {
-        alert(err);
-    })
-</script>
-</html>
-
-  ```
 
 ### TODO
 
   - CLI Support
   - Unit Tests
-  - ES6 Convertions
+  - ES6 Conversion
 
   **[Back to top](#table-of-contents)**
 
