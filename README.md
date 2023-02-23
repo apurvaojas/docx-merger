@@ -38,26 +38,21 @@ Read input files as binary and pass it to the `DocxMerger` constructor fuction a
 Then call the save function with first argument as `nodebuffer`, check the example below.
 
   ```javascript
-  const DocxMerger = require('docx-merger');
+  const DocxMerger = require('./../src/index');
 
-  const fs = require('fs');
-  const path = require('path');
+const fs = require('fs');
+const path = require('path');
 
-  const file1 = fs
-      .readFileSync(path.resolve(__dirname, 'template.docx'), 'binary');
-
-  const file2 = fs
-      .readFileSync(path.resolve(__dirname, 'template1.docx'), 'binary');
-
-  const docx = new DocxMerger({},[file1,file2]);
-
-
-  //SAVING THE DOCX FILE
-
-  docx.save('nodebuffer',function (data) {
-      // fs.writeFile("output.zip", data, function(err){/*...*/});
-      fs.writeFile("output.docx", data, function(err){/*...*/});
-  });
+(async () => {
+    const file1 = fs.readFileSync(path.resolve(__dirname, 'template.docx'), 'binary');
+    const file2 = fs.readFileSync(path.resolve(__dirname, 'template1.docx'), 'binary');
+    const docx = new DocxMerger();
+    await docx.initialize({},[file1,file2]);
+    //SAVING THE DOCX FILE
+    const data = await docx.save('nodebuffer');
+    await fs.writeFile("output.zip", data);
+    await fs.writeFile("output.docx", data);
+})()
   ```
 
 **[Back to top](#table-of-contents)**
