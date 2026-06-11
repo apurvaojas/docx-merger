@@ -1,6 +1,4 @@
 var JSZip = require('jszip');
-var DOMParser = require('xmldom').DOMParser;
-var XMLSerializer = require('xmldom').XMLSerializer;
 
 var Style = require('./merge-styles');
 var Media = require('./merge-media');

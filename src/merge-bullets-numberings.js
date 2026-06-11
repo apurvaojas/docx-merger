@@ -1,5 +1,5 @@
-var XMLSerializer = require('xmldom').XMLSerializer;
-var DOMParser = require('xmldom').DOMParser;
+var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
+var DOMParser = require('@xmldom/xmldom').DOMParser;
 
 
 var prepareNumbering = function(files) {

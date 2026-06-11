@@ -34,8 +34,8 @@
   },
   "homepage": "https://github.com/apurvaojas/docx-merger#readme",
   "dependencies": {
-    "jszip": "^2.6.1",
-    "xmldom": "^0.1.27"
+    "@xmldom/xmldom": "^0.8.13",
+    "jszip": "^2.6.1"
   },
   "devDependencies": {
     "docx-merger-v1": "npm:docx-merger@1.2.2",

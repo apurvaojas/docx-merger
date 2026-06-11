@@ -2,8 +2,7 @@
 var fflate = require('fflate');
 var assert = require('node:assert');
 
-// Phase 1 (Task 6) changes this require to '@xmldom/xmldom'
-var DOMParser = require('xmldom').DOMParser;
+var DOMParser = require('@xmldom/xmldom').DOMParser;
 
 function toU8(data) {
     if (data instanceof Uint8Array) return data; // includes Buffer

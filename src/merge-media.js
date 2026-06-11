@@ -1,6 +1,6 @@
 
-var XMLSerializer = require('xmldom').XMLSerializer;
-var DOMParser = require('xmldom').DOMParser;
+var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
+var DOMParser = require('@xmldom/xmldom').DOMParser;
 
 
 var prepareMediaFiles = function(files, media) {
@@ -64,7 +64,6 @@ var updateMediaRelations = function(zip, count, _media) {
 var updateMediaContent = function(zip, count, _media) {
 
     var xmlString = zip.file("word/document.xml").asText();
-    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
     xmlString = xmlString.replace(new RegExp(_media[count].oldRelID + '"', 'g'), _media[count].oldRelID + '_' + count + '"');
 
