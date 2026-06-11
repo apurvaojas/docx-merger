@@ -65,10 +65,20 @@ test('DIFFERENTIAL: body text identical to docx-merger@1.2.2 on example template
     assert.strictEqual(current, v1);
 });
 
-test('DIFFERENTIAL: output part list is a superset of v1.2.2 part list', function () {
-    var current = Object.keys(inspect.unzip(mergeWith(DocxMerger, [tplA, tplB]))).filter(function (n) { return !/\/$/.test(n); }).sort();
-    var v1 = Object.keys(inspect.unzip(mergeWith(DocxMergerV1, [tplA, tplB]))).filter(function (n) { return !/\/$/.test(n); }).sort();
-    v1.forEach(function (name) {
+test('DIFFERENTIAL: output part list is a superset of v1.2.2 part list (media renamed)', function () {
+    var isMedia = function (n) { return /^word\/media\//.test(n); };
+    var current = Object.keys(inspect.unzip(mergeWith(DocxMerger, [tplA, tplB]))).filter(function (n) { return !/\/$/.test(n); });
+    var v1 = Object.keys(inspect.unzip(mergeWith(DocxMergerV1, [tplA, tplB]))).filter(function (n) { return !/\/$/.test(n); });
+
+    // Non-media parts must still all be present.
+    v1.filter(function (n) { return !isMedia(n); }).forEach(function (name) {
         assert.ok(current.indexOf(name) !== -1, 'part present in v1 output but missing now: ' + name);
     });
+    // Media parts are deliberately renamed in v2 (collision-free media_N.ext, #55),
+    // but the COUNT must be unchanged — v1 left orphaned duplicates, v2 must not add
+    // or drop real images relative to the de-duplicated set.
+    var currentMedia = current.filter(isMedia).length;
+    var v1Media = v1.filter(isMedia).length;
+    assert.ok(currentMedia <= v1Media && currentMedia > 0,
+        'media count regressed: v1=' + v1Media + ' current=' + currentMedia);
 });

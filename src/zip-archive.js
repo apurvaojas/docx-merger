@@ -38,6 +38,10 @@ ZipArchive.prototype.setBytes = function (name, bytes) {
     this._entries[name] = bytes;
 };
 
+ZipArchive.prototype.remove = function (name) {
+    delete this._entries[name];
+};
+
 ZipArchive.prototype.names = function () {
     return Object.keys(this._entries).filter(function (n) { return n.slice(-1) !== '/'; });
 };

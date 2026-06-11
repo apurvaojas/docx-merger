@@ -11,9 +11,10 @@ var prepareMediaFiles = function(files, media) {
     files.forEach(function(zip, index) {
         zip.names().forEach(function(mfile) {
             if (/^word\/media\//.test(mfile) && mfile.length > 11) {
+                var ext = mfile.indexOf('.') !== -1 ? mfile.substring(mfile.lastIndexOf('.')) : '';
                 media[count] = {};
                 media[count].oldTarget = mfile;
-                media[count].newTarget = mfile.replace(/[0-9]/, '_' + count).replace('word/', "");
+                media[count].newTarget = 'media/media_' + count + ext;
                 media[count].fileIndex = index;
                 updateMediaRelations(zip, count, media);
                 updateMediaContent(zip, count, media);
@@ -64,6 +65,15 @@ var copyMediaFiles = function(base, _media, _files) {
         var content = _files[_media[media].fileIndex].getBytes(_media[media].oldTarget);
 
         base.setBytes('word/' + _media[media].newTarget, content);
+    }
+
+    // The base file is _files[0], so its original media entries are still present
+    // under their old names after copying. Remove the ones we renamed so they don't
+    // linger as orphaned duplicates (#55).
+    for (var m in _media) {
+        if (_media[m].fileIndex === 0) {
+            base.remove(_media[m].oldTarget);
+        }
     }
 };
 

@@ -44,3 +44,22 @@ test('A4: style IDs with regex metacharacters merge correctly (no crash, ref ren
     var doc = inspect.partText(inspect.assertValidDocx(mergeToU8([f1, f2])), 'word/document.xml');
     assert.ok(doc.indexOf('w:val="' + styleId + '_0"') !== -1, 'style reference in body was not renamed: ' + doc);
 });
+
+function withImages(imgNames) {
+    var media = {}, rels = '', body = '';
+    imgNames.forEach(function (n, i) {
+        media[n] = build.TINY_PNG;
+        rels += '<Relationship Id="rImg' + i + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + n + '"/>';
+        body += '<w:p><w:r><w:t>img ' + n + '</w:t></w:r></w:p>';
+    });
+    return build.buildDocx({ media: media, rels: rels, body: body, contentTypeDefaults: '<Default Extension="png" ContentType="image/png"/>' });
+}
+
+test('A6: multi-digit media names do not collide or duplicate (#55)', function () {
+    var f1 = withImages(['image1.png', 'image10.png']);
+    var f2 = withImages(['image1.png']);
+    var entries = inspect.assertValidDocx(mergeToU8([f1, f2]));
+    var mediaNames = Object.keys(entries).filter(function (n) { return /^word\/media\//.test(n); });
+    assert.strictEqual(mediaNames.length, 3,
+        'expected exactly 3 media files, got: ' + mediaNames.join(', '));
+});
