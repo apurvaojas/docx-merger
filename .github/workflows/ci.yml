@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches: [master, v2]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        node: [18, 20, 22]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # Security gate. Stays advisory until Phase 1 swaps the vulnerable deps
+      # (Task 9 removes continue-on-error to make it blocking).
+      - run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
