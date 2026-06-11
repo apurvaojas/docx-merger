@@ -1,6 +1,7 @@
 
 var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
 var DOMParser = require('@xmldom/xmldom').DOMParser;
+var xmlUtils = require('./xml-utils');
 
 
 var prepareMediaFiles = function(files, media) {
@@ -43,8 +44,7 @@ var updateMediaRelations = function(zip, count, _media) {
         }
     }
 
-    var startIndex = xmlString.indexOf("<Relationships");
-    xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
+    xmlString = xmlUtils.replaceFrom(xmlString, "<Relationships", serializer.serializeToString(xml.documentElement));
 
     zip.setText("word/_rels/document.xml.rels", xmlString);
 };

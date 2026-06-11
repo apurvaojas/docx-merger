@@ -1,5 +1,6 @@
 'use strict';
 var ZipArchive = require('./zip-archive');
+var xmlUtils = require('./xml-utils');
 
 var Style = require('./merge-styles');
 var Media = require('./merge-media');
@@ -102,8 +103,9 @@ function DocxMerger(options, files) {
         var xml = zip.getText("word/document.xml");
         var startIndex = xml.indexOf("<w:body>") + 8;
         var endIndex = xml.lastIndexOf("<w:sectPr");
+        if (endIndex === -1) endIndex = xml.lastIndexOf("</w:body>");
 
-        xml = xml.replace(xml.slice(startIndex, endIndex), this._body.join(''));
+        xml = xmlUtils.replaceBetween(xml, startIndex, endIndex, this._body.join(''));
 
         RelContentType.generateContentTypes(zip, this._contentTypes);
         Media.copyMediaFiles(zip, this._media, this._files);

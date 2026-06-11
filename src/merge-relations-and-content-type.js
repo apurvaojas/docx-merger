@@ -1,6 +1,7 @@
 
 var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
 var DOMParser = require('@xmldom/xmldom').DOMParser;
+var xmlUtils = require('./xml-utils');
 
 
 var mergeContentTypes = function(files, _contentTypes) {
@@ -54,8 +55,7 @@ var generateContentTypes = function(zip, _contentTypes) {
         types.appendChild(_contentTypes[node]);
     }
 
-    var startIndex = xmlString.indexOf("<Types");
-    xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
+    xmlString = xmlUtils.replaceFrom(xmlString, "<Types", serializer.serializeToString(types));
 
     zip.setText("[Content_Types].xml", xmlString);
 };
@@ -72,8 +72,7 @@ var generateRelations = function(zip, _rel) {
         types.appendChild(_rel[node]);
     }
 
-    var startIndex = xmlString.indexOf("<Relationships");
-    xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
+    xmlString = xmlUtils.replaceFrom(xmlString, "<Relationships", serializer.serializeToString(types));
 
     zip.setText("word/_rels/document.xml.rels", xmlString);
 };

@@ -1,5 +1,6 @@
 var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
 var DOMParser = require('@xmldom/xmldom').DOMParser;
+var xmlUtils = require('./xml-utils');
 
 
 var prepareNumbering = function(files) {
@@ -64,8 +65,7 @@ var prepareNumbering = function(files) {
 
 
 
-        var startIndex = xmlString.indexOf("<w:numbering ");
-        xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
+        xmlString = xmlUtils.replaceFrom(xmlString, "<w:numbering ", serializer.serializeToString(xml.documentElement));
 
         zip.setText("word/numbering.xml", xmlString);
         // console.log(nodes);
@@ -95,7 +95,7 @@ var generateNumbering = function(zip, _numbering) {
     var startIndex = xml.indexOf("<w:abstractNum ");
     var endIndex = xml.indexOf("</w:numbering>");
 
-    xml = xml.replace(xml.slice(startIndex, endIndex), _numbering.join(''));
+    xml = xmlUtils.replaceBetween(xml, startIndex, endIndex, _numbering.join(''));
 
     zip.setText("word/numbering.xml", xml);
 };

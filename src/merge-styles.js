@@ -1,5 +1,6 @@
 var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
 var DOMParser = require('@xmldom/xmldom').DOMParser;
+var xmlUtils = require('./xml-utils');
 
 var prepareStyles = function(files, style) {
     var serializer = new XMLSerializer();
@@ -41,8 +42,7 @@ var prepareStyles = function(files, style) {
             }
         }
 
-        var startIndex = xmlString.indexOf("<w:styles ");
-        xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
+        xmlString = xmlUtils.replaceFrom(xmlString, "<w:styles ", serializer.serializeToString(xml.documentElement));
 
         zip.setText("word/styles.xml", xmlString);
     });
@@ -76,7 +76,7 @@ var generateStyles = function(zip, _style) {
     var startIndex = xml.indexOf("<w:style ");
     var endIndex = xml.indexOf("</w:styles>");
 
-    xml = xml.replace(xml.slice(startIndex, endIndex), _style.join(''));
+    xml = xmlUtils.replaceBetween(xml, startIndex, endIndex, _style.join(''));
 
     zip.setText("word/styles.xml", xml);
 };
