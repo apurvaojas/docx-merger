@@ -7,8 +7,7 @@ var mergeContentTypes = function(files, _contentTypes) {
 
 
     files.forEach(function(zip) {
-        // var zip = new JSZip(file);
-        var xmlString = zip.file("[Content_Types].xml").asText();
+        var xmlString = zip.getText("[Content_Types].xml");
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
         var childNodes = xml.getElementsByTagName('Types')[0].childNodes;
@@ -27,8 +26,7 @@ var mergeContentTypes = function(files, _contentTypes) {
 var mergeRelations = function(files, _rel) {
 
     files.forEach(function(zip) {
-        // var zip = new JSZip(file);
-        var xmlString = zip.file("word/_rels/document.xml.rels").asText();
+        var xmlString = zip.getText("word/_rels/document.xml.rels");
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
         var childNodes = xml.getElementsByTagName('Relationships')[0].childNodes;
@@ -46,7 +44,7 @@ var mergeRelations = function(files, _rel) {
 
 var generateContentTypes = function(zip, _contentTypes) {
     // body...
-    var xmlString = zip.file("[Content_Types].xml").asText();
+    var xmlString = zip.getText("[Content_Types].xml");
     var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
     var serializer = new XMLSerializer();
 
@@ -59,12 +57,12 @@ var generateContentTypes = function(zip, _contentTypes) {
     var startIndex = xmlString.indexOf("<Types");
     xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
 
-    zip.file("[Content_Types].xml", xmlString);
+    zip.setText("[Content_Types].xml", xmlString);
 };
 
 var generateRelations = function(zip, _rel) {
     // body...
-    var xmlString = zip.file("word/_rels/document.xml.rels").asText();
+    var xmlString = zip.getText("word/_rels/document.xml.rels");
     var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
     var serializer = new XMLSerializer();
 
@@ -77,7 +75,7 @@ var generateRelations = function(zip, _rel) {
     var startIndex = xmlString.indexOf("<Relationships");
     xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
 
-    zip.file("word/_rels/document.xml.rels", xmlString);
+    zip.setText("word/_rels/document.xml.rels", xmlString);
 };
 
 

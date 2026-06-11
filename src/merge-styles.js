@@ -2,12 +2,10 @@ var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
 var DOMParser = require('@xmldom/xmldom').DOMParser;
 
 var prepareStyles = function(files, style) {
-    // var self = this;
-    // var style = this._styles;
     var serializer = new XMLSerializer();
 
     files.forEach(function(zip, index) {
-        var xmlString = zip.file("word/styles.xml").asText();
+        var xmlString = zip.getText("word/styles.xml");
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var nodes = xml.getElementsByTagName('w:style');
 
@@ -46,8 +44,7 @@ var prepareStyles = function(files, style) {
         var startIndex = xmlString.indexOf("<w:styles ");
         xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
 
-        zip.file("word/styles.xml", xmlString);
-        // console.log(nodes);
+        zip.setText("word/styles.xml", xmlString);
     });
 };
 
@@ -55,7 +52,7 @@ var mergeStyles = function(files, _styles) {
 
     files.forEach(function(zip) {
 
-        var xml = zip.file("word/styles.xml").asText();
+        var xml = zip.getText("word/styles.xml");
 
         xml = xml.substring(xml.indexOf("<w:style "), xml.indexOf("</w:styles"));
 
@@ -67,29 +64,21 @@ var mergeStyles = function(files, _styles) {
 var updateStyleRel_Content = function(zip, fileIndex, styleId) {
 
 
-    var xmlString = zip.file("word/document.xml").asText();
+    var xmlString = zip.getText("word/document.xml");
 
     xmlString = xmlString.replace(new RegExp('w:val="' + styleId + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
 
-    // zip.file("word/document.xml", "");
-
-    zip.file("word/document.xml", xmlString);
+    zip.setText("word/document.xml", xmlString);
 };
 
 var generateStyles = function(zip, _style) {
-    var xml = zip.file("word/styles.xml").asText();
+    var xml = zip.getText("word/styles.xml");
     var startIndex = xml.indexOf("<w:style ");
     var endIndex = xml.indexOf("</w:styles>");
 
-    // console.log(xml.substring(startIndex, endIndex))
-
     xml = xml.replace(xml.slice(startIndex, endIndex), _style.join(''));
 
-    // console.log(xml.substring(xml.indexOf("</w:docDefaults>")+16, xml.indexOf("</w:styles>")))
-    // console.log(this._style.join(''))
-    // console.log(xml)
-
-    zip.file("word/styles.xml", xml);
+    zip.setText("word/styles.xml", xml);
 };
 
 module.exports = {

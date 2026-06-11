@@ -7,11 +7,10 @@ var prepareNumbering = function(files) {
     var serializer = new XMLSerializer();
 
     files.forEach(function(zip, index) {
-        var xmlBin = zip.file('word/numbering.xml');
-        if (!xmlBin) {
+        var xmlString = zip.getText('word/numbering.xml');
+        if (xmlString === null) {
             return;
         }
-        var xmlString = xmlBin.asText();
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var nodes = xml.getElementsByTagName('w:abstractNum');
 
@@ -68,24 +67,18 @@ var prepareNumbering = function(files) {
         var startIndex = xmlString.indexOf("<w:numbering ");
         xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
 
-        zip.file("word/numbering.xml", xmlString);
+        zip.setText("word/numbering.xml", xmlString);
         // console.log(nodes);
     });
 };
 
 var mergeNumbering = function(files, _numbering) {
 
-    // this._builder = this._style;
-
-    // console.log("MERGE__STYLES");
-
-
     files.forEach(function(zip) {
-        var xmlBin = zip.file('word/numbering.xml');
-        if (!xmlBin) {
+        var xml = zip.getText('word/numbering.xml');
+        if (xml === null) {
           return;
         }
-        var xml = xmlBin.asText();
 
         xml = xml.substring(xml.indexOf("<w:abstractNum "), xml.indexOf("</w:numbering"));
 
@@ -95,23 +88,16 @@ var mergeNumbering = function(files, _numbering) {
 };
 
 var generateNumbering = function(zip, _numbering) {
-    var xmlBin = zip.file('word/numbering.xml');
-    if (!xmlBin) {
+    var xml = zip.getText('word/numbering.xml');
+    if (xml === null) {
       return;
     }
-    var xml = xmlBin.asText();
     var startIndex = xml.indexOf("<w:abstractNum ");
     var endIndex = xml.indexOf("</w:numbering>");
 
-    // console.log(xml.substring(startIndex, endIndex))
-
     xml = xml.replace(xml.slice(startIndex, endIndex), _numbering.join(''));
 
-    // console.log(xml.substring(xml.indexOf("</w:docDefaults>")+16, xml.indexOf("</w:styles>")))
-    // console.log(this._style.join(''))
-    // console.log(xml)
-
-    zip.file("word/numbering.xml", xml);
+    zip.setText("word/numbering.xml", xml);
 };
 
 
