@@ -63,3 +63,12 @@ test('A6: multi-digit media names do not collide or duplicate (#55)', function (
     assert.strictEqual(mediaNames.length, 3,
         'expected exactly 3 media files, got: ' + mediaNames.join(', '));
 });
+
+test('A5: Default extensions with the same ContentType are all kept (#53)', function () {
+    var f1 = build.buildDocx({ contentTypeDefaults: '<Default Extension="png" ContentType="image/png"/>' });
+    var f2 = build.buildDocx({ contentTypeDefaults: '<Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="jpeg" ContentType="image/jpeg"/>' });
+    var ct = inspect.partText(inspect.assertValidDocx(mergeToU8([f1, f2])), '[Content_Types].xml');
+    assert.ok(/Extension="jpg"/.test(ct), 'jpg Default was dropped');
+    assert.ok(/Extension="jpeg"/.test(ct), 'jpeg Default was dropped');
+    assert.ok(/Extension="png"/.test(ct), 'png Default was dropped');
+});

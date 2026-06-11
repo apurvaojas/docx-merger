@@ -15,9 +15,15 @@ var mergeContentTypes = function(files, _contentTypes) {
 
         for (var node in childNodes) {
             if (/^\d+$/.test(node) && childNodes[node].getAttribute) {
-                var contentType = childNodes[node].getAttribute('ContentType');
-                if (!_contentTypes[contentType])
-                    _contentTypes[contentType] = childNodes[node].cloneNode();
+                var el = childNodes[node];
+                // Dedupe by what actually identifies the entry: a Default by its
+                // Extension, an Override by its PartName. Keying on ContentType
+                // alone dropped distinct extensions sharing a type, e.g. jpg/jpeg.
+                var key = el.tagName === 'Default'
+                    ? 'D:' + el.getAttribute('Extension')
+                    : 'O:' + el.getAttribute('PartName');
+                if (!_contentTypes[key])
+                    _contentTypes[key] = el.cloneNode();
             }
         }
 
