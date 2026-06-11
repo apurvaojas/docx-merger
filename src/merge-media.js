@@ -53,7 +53,7 @@ var updateMediaContent = function(zip, count, _media) {
 
     var xmlString = zip.getText("word/document.xml");
 
-    xmlString = xmlString.replace(new RegExp(_media[count].oldRelID + '"', 'g'), _media[count].oldRelID + '_' + count + '"');
+    xmlString = xmlString.replace(new RegExp(xmlUtils.escapeRegExp(_media[count].oldRelID) + '"', 'g'), _media[count].oldRelID + '_' + count + '"');
 
     zip.setText("word/document.xml", xmlString);
 };

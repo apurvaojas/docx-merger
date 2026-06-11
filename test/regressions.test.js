@@ -32,3 +32,15 @@ test('A3: document text containing $&, $\', $` survives merging intact (#48, #18
     assert.ok(text.indexOf("Profit $&amp; Loss and $` and $' tokens") !== -1,
         'second file $-tokens were mangled: ' + text);
 });
+
+test('A4: style IDs with regex metacharacters merge correctly (no crash, ref renamed)', function () {
+    var styleId = 'Title(Main'; // unbalanced paren -> an unescaped RegExp throws SyntaxError
+    var styles = '<w:style w:type="paragraph" w:styleId="' + styleId + '"><w:name w:val="x"/></w:style>';
+    var f1 = build.buildDocx({
+        styles: styles,
+        body: '<w:p><w:pPr><w:pStyle w:val="' + styleId + '"/></w:pPr><w:r><w:t>styled</w:t></w:r></w:p>'
+    });
+    var f2 = build.buildDocx({ body: build.para('plain') });
+    var doc = inspect.partText(inspect.assertValidDocx(mergeToU8([f1, f2])), 'word/document.xml');
+    assert.ok(doc.indexOf('w:val="' + styleId + '_0"') !== -1, 'style reference in body was not renamed: ' + doc);
+});

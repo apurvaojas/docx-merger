@@ -66,7 +66,7 @@ var updateStyleRel_Content = function(zip, fileIndex, styleId) {
 
     var xmlString = zip.getText("word/document.xml");
 
-    xmlString = xmlString.replace(new RegExp('w:val="' + styleId + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
+    xmlString = xmlString.replace(new RegExp('w:val="' + xmlUtils.escapeRegExp(styleId) + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
 
     zip.setText("word/document.xml", xmlString);
 };
