@@ -19,7 +19,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      # Security gate. Stays advisory until Phase 1 swaps the vulnerable deps
-      # (Task 9 removes continue-on-error to make it blocking).
+      # Security gate: production dependency tree must be advisory-free.
       - run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
