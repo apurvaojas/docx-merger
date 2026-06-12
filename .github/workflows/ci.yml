@@ -19,5 +19,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run build
+      - run: npm run size
       # Security gate: production dependency tree must be advisory-free.
       - run: npm audit --omit=dev --audit-level=high
