@@ -8,11 +8,19 @@ Javascript Library for Merging Docx file in NodeJS and Browser Environment.
 
  The Library Preserves the Styles, Tables, Images, Bullets and Numberings of input files.
 
+> **v2.0.0** is a security + correctness release with **no breaking changes to the
+> documented API**. It removes the vulnerable `jszip@2` and abandoned `xmldom`
+> dependencies and fixes long-standing output-corruption, media, hyperlink and
+> numbering bugs. See [CHANGELOG.md](CHANGELOG.md) and
+> [Migrating from 1.x](#migrating-from-1x) below.
+
 ## Table of Contents
 
   1. [Installation](#installation)
   1. [Usage Nodejs](#usage-nodejs)
   1. [Usage Browser](#usage-browser)
+  1. [Input and output types](#input-and-output-types)
+  1. [Migrating from 1.x](#migrating-from-1x)
   1. [TODO](#todo)
   1. [Known Issues](#known-issues)
 
@@ -53,6 +61,15 @@ Then call the save function with first argument as `nodebuffer`, check the examp
       // fs.writeFile("output.zip", data, function(err){/*...*/});
       fs.writeFile("output.docx", data, function(err){/*...*/});
   });
+  ```
+
+#### Using a Promise (new in v2)
+
+Call `save(type)` with no callback to get a Promise instead:
+
+  ```javascript
+  var data = await new DocxMerger({}, [file1, file2]).save('nodebuffer');
+  fs.writeFileSync('output.docx', data);
   ```
 
 **[Back to top](#table-of-contents)**
@@ -134,16 +151,55 @@ Mandatory in IE 6, 7, 8 and 9.
 
   ```
 
+### Input and output types
+
+Each input file may be a binary string (`fs.readFileSync(path, 'binary')`), a
+`Buffer`, a `Uint8Array`, or an `ArrayBuffer`.
+
+The first argument to `save(type[, callback])` selects the output type:
+
+| `type`                       | Output            | Typical use      |
+| ---------------------------- | ----------------- | ---------------- |
+| `nodebuffer`                 | `Buffer`          | Node, write file |
+| `blob`                       | `Blob`            | Browser download |
+| `uint8array`                 | `Uint8Array`      | generic binary   |
+| `arraybuffer`                | `ArrayBuffer`     | generic binary   |
+| `base64`                     | base64 `string`   | data URIs        |
+| `string` / `binarystring`    | binary `string`   | legacy           |
+
+With a callback, it is invoked synchronously. Without a callback, `save` returns
+a `Promise` of the same value.
+
+  **[Back to top](#table-of-contents)**
+
+### Migrating from 1.x
+
+For the documented usage above, **no code changes are required** — the
+constructor and `save(type, callback)` behave the same. v2 additionally lets
+`save(type)` return a Promise.
+
+What changed under the hood (hence the major version bump):
+
+  - `jszip@2` and `xmldom` were replaced internally with `fflate` and
+    `@xmldom/xmldom`; output bytes differ (media parts are renamed, numbering is
+    renumbered) but documents render identically or better.
+  - Invalid input now throws a descriptive `Error` instead of an opaque
+    `TypeError`.
+
+  **[Back to top](#table-of-contents)**
+
 ### TODO
 
   - CLI Support
-  - Unit Tests
-  - ES6 Convertions
+  - ES6 Conversion / TypeScript source
+  - Header & footer merging
 
   **[Back to top](#table-of-contents)**
 
 ### Known Issues
 
-  - Microsoft Word in windows Shows some error due to numbering.
+  - List numbering across merged files (the old "Word found unreadable content"
+    prompt) is **fixed in v2.0.0**.
+  - Headers and footers are not yet merged — only the first document's are kept.
 
   **[Back to top](#table-of-contents)**
