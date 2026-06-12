@@ -6,6 +6,7 @@ var Style = require('./merge-styles');
 var Media = require('./merge-media');
 var RelContentType = require('./merge-relations-and-content-type');
 var bulletsNumbering = require('./merge-bullets-numberings');
+var Hyperlinks = require('./merge-hyperlinks');
 
 var DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -76,6 +77,7 @@ function DocxMerger(options, files) {
 
         RelContentType.mergeContentTypes(files, this._contentTypes);
         Media.prepareMediaFiles(files, this._media);
+        Hyperlinks.prepareHyperlinks(files);
         RelContentType.mergeRelations(files, this._rel);
 
         bulletsNumbering.prepareNumbering(files);

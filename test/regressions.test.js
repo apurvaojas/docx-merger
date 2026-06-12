@@ -72,3 +72,22 @@ test('A5: Default extensions with the same ContentType are all kept (#53)', func
     assert.ok(/Extension="jpeg"/.test(ct), 'jpeg Default was dropped');
     assert.ok(/Extension="png"/.test(ct), 'png Default was dropped');
 });
+
+test('A7: same rel Id pointing at different hyperlink targets keeps both links', function () {
+    function withLink(url) {
+        return build.buildDocx({
+            rels: '<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="' + url + '" TargetMode="External"/>',
+            body: '<w:p><w:hyperlink r:id="rId9"><w:r><w:t>link</w:t></w:r></w:hyperlink></w:p>'
+        });
+    }
+    var entries = inspect.assertValidDocx(mergeToU8([withLink('https://a.example/'), withLink('https://b.example/')]));
+    var rels = inspect.partText(entries, 'word/_rels/document.xml.rels');
+    assert.ok(rels.indexOf('https://a.example/') !== -1, 'first link target lost');
+    assert.ok(rels.indexOf('https://b.example/') !== -1, 'second link target lost');
+    // every r:id referenced in the merged body must resolve to a relationship
+    var doc = inspect.partText(entries, 'word/document.xml');
+    (doc.match(/r:id="([^"]+)"/g) || []).forEach(function (m) {
+        var id = m.slice(6, -1);
+        assert.ok(rels.indexOf('Id="' + id + '"') !== -1, 'body references missing relationship ' + id);
+    });
+});
