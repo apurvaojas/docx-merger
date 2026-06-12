@@ -1,11 +1,38 @@
-var JSZip = require('jszip');
-var DOMParser = require('xmldom').DOMParser;
-var XMLSerializer = require('xmldom').XMLSerializer;
+'use strict';
+var ZipArchive = require('./zip-archive');
+var xmlUtils = require('./xml-utils');
 
 var Style = require('./merge-styles');
 var Media = require('./merge-media');
 var RelContentType = require('./merge-relations-and-content-type');
 var bulletsNumbering = require('./merge-bullets-numberings');
+var Hyperlinks = require('./merge-hyperlinks');
+
+var DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+function u8ToBinaryString(u8) {
+    var s = '';
+    for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+    return s;
+}
+
+function u8ToBase64(u8) {
+    if (typeof Buffer !== 'undefined') return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength).toString('base64');
+    return btoa(u8ToBinaryString(u8));
+}
+
+function convertOutput(u8, type) {
+    switch (type) {
+        case 'uint8array': return u8;
+        case 'arraybuffer': return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+        case 'nodebuffer': return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
+        case 'blob': return new Blob([u8], { type: DOCX_MIME });
+        case 'string':
+        case 'binarystring': return u8ToBinaryString(u8);
+        case 'base64': return u8ToBase64(u8);
+        default: throw new Error('docx-merger: unknown save type "' + type + '"');
+    }
+}
 
 function DocxMerger(options, files) {
 
@@ -18,8 +45,14 @@ function DocxMerger(options, files) {
     this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
     this._files = [];
     var self = this;
-    (files || []).forEach(function(file) {
-        self._files.push(new JSZip(file));
+    (files || []).forEach(function(file, index) {
+        var zip = new ZipArchive(file);
+        ['word/document.xml', 'word/styles.xml', 'word/_rels/document.xml.rels', '[Content_Types].xml'].forEach(function(part) {
+            if (zip.getText(part) === null) {
+                throw new Error('docx-merger: input file at index ' + index + ' is missing required part "' + part + '" - is it a valid .docx?');
+            }
+        });
+        self._files.push(zip);
     });
     this._contentTypes = {};
 
@@ -50,17 +83,17 @@ function DocxMerger(options, files) {
 
         RelContentType.mergeContentTypes(files, this._contentTypes);
         Media.prepareMediaFiles(files, this._media);
+        Hyperlinks.prepareHyperlinks(files);
         RelContentType.mergeRelations(files, this._rel);
 
-        bulletsNumbering.prepareNumbering(files);
+        var numberingMaps = bulletsNumbering.prepareNumbering(files);
         bulletsNumbering.mergeNumbering(files, this._numbering);
 
-        Style.prepareStyles(files, this._style);
+        Style.prepareStyles(files, this._style, numberingMaps);
         Style.mergeStyles(files, this._style);
 
         files.forEach(function(zip, index) {
-            //var zip = new JSZip(file);
-            var xml = zip.file("word/document.xml").asText();
+            var xml = zip.getText("word/document.xml");
             xml = xml.substring(xml.indexOf("<w:body>") + 8);
             xml = xml.substring(0, xml.indexOf("</w:body>"));
             xml = xml.substring(0, xml.lastIndexOf("<w:sectPr"));
@@ -75,11 +108,12 @@ function DocxMerger(options, files) {
 
         var zip = this._files[0];
 
-        var xml = zip.file("word/document.xml").asText();
+        var xml = zip.getText("word/document.xml");
         var startIndex = xml.indexOf("<w:body>") + 8;
         var endIndex = xml.lastIndexOf("<w:sectPr");
+        if (endIndex === -1) endIndex = xml.lastIndexOf("</w:body>");
 
-        xml = xml.replace(xml.slice(startIndex, endIndex), this._body.join(''));
+        xml = xmlUtils.replaceBetween(xml, startIndex, endIndex, this._body.join(''));
 
         RelContentType.generateContentTypes(zip, this._contentTypes);
         Media.copyMediaFiles(zip, this._media, this._files);
@@ -87,15 +121,14 @@ function DocxMerger(options, files) {
         bulletsNumbering.generateNumbering(zip, this._numbering);
         Style.generateStyles(zip, this._style);
 
-        zip.file("word/document.xml", xml);
+        zip.setText("word/document.xml", xml);
 
-        callback(zip.generate({ 
-            type: type,
-            compression: "DEFLATE",
-            compressionOptions: {
-                level: 4
-            }
-        }));
+        var data = convertOutput(zip.generate(), type);
+        if (typeof callback === 'function') {
+            callback(data);            // synchronous, exactly like jszip 2 — compat contract
+            return;
+        }
+        return Promise.resolve(data);  // additive: promise API when no callback given
     };
 
 

@@ -1,15 +1,15 @@
-var XMLSerializer = require('xmldom').XMLSerializer;
-var DOMParser = require('xmldom').DOMParser;
+var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
+var DOMParser = require('@xmldom/xmldom').DOMParser;
+var xmlUtils = require('./xml-utils');
 
-var prepareStyles = function(files, style) {
-    // var self = this;
-    // var style = this._styles;
+var prepareStyles = function(files, style, numberingMaps) {
     var serializer = new XMLSerializer();
 
     files.forEach(function(zip, index) {
-        var xmlString = zip.file("word/styles.xml").asText();
+        var xmlString = zip.getText("word/styles.xml");
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var nodes = xml.getElementsByTagName('w:style');
+        var renamedIds = [];
 
         for (var node in nodes) {
             if (/^\d+$/.test(node) && nodes[node].getAttribute) {
@@ -36,18 +36,28 @@ var prepareStyles = function(files, style) {
                 var numId = nodes[node].getElementsByTagName('w:numId')[0];
                 if (numId) {
                     var numId_ID = numId.getAttribute('w:val');
-                    numId.setAttribute('w:val', numId_ID + index);
+                    var numMap = (numberingMaps && numberingMaps[index] && numberingMaps[index].num) || {};
+                    numId.setAttribute('w:val', numMap[numId_ID] || numId_ID);
                 }
 
-                updateStyleRel_Content(zip, index, styleId);
+                renamedIds.push(styleId);
             }
         }
 
-        var startIndex = xmlString.indexOf("<w:styles ");
-        xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(xml.documentElement));
+        xmlString = xmlUtils.replaceFrom(xmlString, "<w:styles ", serializer.serializeToString(xml.documentElement));
 
-        zip.file("word/styles.xml", xmlString);
-        // console.log(nodes);
+        zip.setText("word/styles.xml", xmlString);
+
+        // Rewrite every style reference in the document body in a single pass,
+        // instead of re-reading and re-scanning document.xml once per style.
+        if (renamedIds.length) {
+            var docString = zip.getText("word/document.xml");
+            var pattern = new RegExp('w:val="(' + renamedIds.map(xmlUtils.escapeRegExp).join('|') + ')"', 'g');
+            docString = docString.replace(pattern, function(m, id) {
+                return 'w:val="' + id + '_' + index + '"';
+            });
+            zip.setText("word/document.xml", docString);
+        }
     });
 };
 
@@ -55,7 +65,7 @@ var mergeStyles = function(files, _styles) {
 
     files.forEach(function(zip) {
 
-        var xml = zip.file("word/styles.xml").asText();
+        var xml = zip.getText("word/styles.xml");
 
         xml = xml.substring(xml.indexOf("<w:style "), xml.indexOf("</w:styles"));
 
@@ -64,38 +74,18 @@ var mergeStyles = function(files, _styles) {
     });
 };
 
-var updateStyleRel_Content = function(zip, fileIndex, styleId) {
-
-
-    var xmlString = zip.file("word/document.xml").asText();
-    var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
-
-    xmlString = xmlString.replace(new RegExp('w:val="' + styleId + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
-
-    // zip.file("word/document.xml", "");
-
-    zip.file("word/document.xml", xmlString);
-};
-
 var generateStyles = function(zip, _style) {
-    var xml = zip.file("word/styles.xml").asText();
+    var xml = zip.getText("word/styles.xml");
     var startIndex = xml.indexOf("<w:style ");
     var endIndex = xml.indexOf("</w:styles>");
 
-    // console.log(xml.substring(startIndex, endIndex))
+    xml = xmlUtils.replaceBetween(xml, startIndex, endIndex, _style.join(''));
 
-    xml = xml.replace(xml.slice(startIndex, endIndex), _style.join(''));
-
-    // console.log(xml.substring(xml.indexOf("</w:docDefaults>")+16, xml.indexOf("</w:styles>")))
-    // console.log(this._style.join(''))
-    // console.log(xml)
-
-    zip.file("word/styles.xml", xml);
+    zip.setText("word/styles.xml", xml);
 };
 
 module.exports = {
     mergeStyles: mergeStyles,
     prepareStyles: prepareStyles,
-    updateStyleRel_Content: updateStyleRel_Content,
     generateStyles: generateStyles
 };

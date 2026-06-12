@@ -1,23 +1,29 @@
 
-var XMLSerializer = require('xmldom').XMLSerializer;
-var DOMParser = require('xmldom').DOMParser;
+var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
+var DOMParser = require('@xmldom/xmldom').DOMParser;
+var xmlUtils = require('./xml-utils');
 
 
 var mergeContentTypes = function(files, _contentTypes) {
 
 
     files.forEach(function(zip) {
-        // var zip = new JSZip(file);
-        var xmlString = zip.file("[Content_Types].xml").asText();
+        var xmlString = zip.getText("[Content_Types].xml");
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
         var childNodes = xml.getElementsByTagName('Types')[0].childNodes;
 
         for (var node in childNodes) {
             if (/^\d+$/.test(node) && childNodes[node].getAttribute) {
-                var contentType = childNodes[node].getAttribute('ContentType');
-                if (!_contentTypes[contentType])
-                    _contentTypes[contentType] = childNodes[node].cloneNode();
+                var el = childNodes[node];
+                // Dedupe by what actually identifies the entry: a Default by its
+                // Extension, an Override by its PartName. Keying on ContentType
+                // alone dropped distinct extensions sharing a type, e.g. jpg/jpeg.
+                var key = el.tagName === 'Default'
+                    ? 'D:' + el.getAttribute('Extension')
+                    : 'O:' + el.getAttribute('PartName');
+                if (!_contentTypes[key])
+                    _contentTypes[key] = el.cloneNode();
             }
         }
 
@@ -27,8 +33,7 @@ var mergeContentTypes = function(files, _contentTypes) {
 var mergeRelations = function(files, _rel) {
 
     files.forEach(function(zip) {
-        // var zip = new JSZip(file);
-        var xmlString = zip.file("word/_rels/document.xml.rels").asText();
+        var xmlString = zip.getText("word/_rels/document.xml.rels");
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
 
         var childNodes = xml.getElementsByTagName('Relationships')[0].childNodes;
@@ -46,7 +51,7 @@ var mergeRelations = function(files, _rel) {
 
 var generateContentTypes = function(zip, _contentTypes) {
     // body...
-    var xmlString = zip.file("[Content_Types].xml").asText();
+    var xmlString = zip.getText("[Content_Types].xml");
     var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
     var serializer = new XMLSerializer();
 
@@ -56,15 +61,14 @@ var generateContentTypes = function(zip, _contentTypes) {
         types.appendChild(_contentTypes[node]);
     }
 
-    var startIndex = xmlString.indexOf("<Types");
-    xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
+    xmlString = xmlUtils.replaceFrom(xmlString, "<Types", serializer.serializeToString(types));
 
-    zip.file("[Content_Types].xml", xmlString);
+    zip.setText("[Content_Types].xml", xmlString);
 };
 
 var generateRelations = function(zip, _rel) {
     // body...
-    var xmlString = zip.file("word/_rels/document.xml.rels").asText();
+    var xmlString = zip.getText("word/_rels/document.xml.rels");
     var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
     var serializer = new XMLSerializer();
 
@@ -74,10 +78,9 @@ var generateRelations = function(zip, _rel) {
         types.appendChild(_rel[node]);
     }
 
-    var startIndex = xmlString.indexOf("<Relationships");
-    xmlString = xmlString.replace(xmlString.slice(startIndex), serializer.serializeToString(types));
+    xmlString = xmlUtils.replaceFrom(xmlString, "<Relationships", serializer.serializeToString(types));
 
-    zip.file("word/_rels/document.xml.rels", xmlString);
+    zip.setText("word/_rels/document.xml.rels", xmlString);
 };
 
 

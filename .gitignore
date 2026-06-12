@@ -3,4 +3,7 @@ node_modules/
 *.zip
 .vscode/
 dist/
-package-lock.json
+
+# internal-only: audit reproduction demo and planning docs (not shipped)
+demo/
+docs/
