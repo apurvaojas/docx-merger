@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "types": "types/index.d.ts",
   "scripts": {
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test",
     "build": "esbuild src/index.js --bundle --minify --format=iife --global-name=DocxMerger --outfile=dist/docx-merger.min.js",
     "size": "node bench/size-check.js"
   },
