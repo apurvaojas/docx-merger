@@ -2,7 +2,7 @@ var XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
 var DOMParser = require('@xmldom/xmldom').DOMParser;
 var xmlUtils = require('./xml-utils');
 
-var prepareStyles = function(files, style) {
+var prepareStyles = function(files, style, numberingMaps) {
     var serializer = new XMLSerializer();
 
     files.forEach(function(zip, index) {
@@ -35,7 +35,8 @@ var prepareStyles = function(files, style) {
                 var numId = nodes[node].getElementsByTagName('w:numId')[0];
                 if (numId) {
                     var numId_ID = numId.getAttribute('w:val');
-                    numId.setAttribute('w:val', numId_ID + index);
+                    var numMap = (numberingMaps && numberingMaps[index] && numberingMaps[index].num) || {};
+                    numId.setAttribute('w:val', numMap[numId_ID] || numId_ID);
                 }
 
                 updateStyleRel_Content(zip, index, styleId);

@@ -6,70 +6,68 @@ var xmlUtils = require('./xml-utils');
 var prepareNumbering = function(files) {
 
     var serializer = new XMLSerializer();
+    var nextAbstractId = 1;
+    var nextNumId = 1;
+    var maps = []; // per file index: { abs: {old: new}, num: {old: new} }
 
     files.forEach(function(zip, index) {
         var xmlString = zip.getText('word/numbering.xml');
+        maps[index] = { abs: {}, num: {} };
         if (xmlString === null) {
             return;
         }
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
+        var absMap = maps[index].abs;
+        var numMap = maps[index].num;
+
         var nodes = xml.getElementsByTagName('w:abstractNum');
+        for (var i = 0; i < nodes.length; i++) {
+            var absNode = nodes.item(i);
+            var absID = absNode.getAttribute('w:abstractNumId');
+            absMap[absID] = String(nextAbstractId++);
+            absNode.setAttribute('w:abstractNumId', absMap[absID]);
 
-        for (var node in nodes) {
-            if (/^\d+$/.test(node) && nodes[node].getAttribute) {
-                var absID = nodes[node].getAttribute('w:abstractNumId');
-                nodes[node].setAttribute('w:abstractNumId', absID + index);
-                var pStyles = nodes[node].getElementsByTagName('w:pStyle');
-                for (var pStyle in pStyles) {
-                    if (pStyles[pStyle].getAttribute) {
-                        var pStyleId = pStyles[pStyle].getAttribute('w:val');
-                        pStyles[pStyle].setAttribute('w:val', pStyleId + '_' + index);
-                    }
-                }
-                var numStyleLinks = nodes[node].getElementsByTagName('w:numStyleLink');
-                for (var numstyleLink in numStyleLinks) {
-                    if (numStyleLinks[numstyleLink].getAttribute) {
-                        var styleLinkId = numStyleLinks[numstyleLink].getAttribute('w:val');
-                        numStyleLinks[numstyleLink].setAttribute('w:val', styleLinkId + '_' + index);
-                    }
-                }
-
-                var styleLinks = nodes[node].getElementsByTagName('w:styleLink');
-                for (var styleLink in styleLinks) {
-                    if (styleLinks[styleLink].getAttribute) {
-                        var styleLinkId = styleLinks[styleLink].getAttribute('w:val');
-                        styleLinks[styleLink].setAttribute('w:val', styleLinkId + '_' + index);
-                    }
-                }
-
+            var pStyles = absNode.getElementsByTagName('w:pStyle');
+            for (var p = 0; p < pStyles.length; p++) {
+                var pStyleId = pStyles.item(p).getAttribute('w:val');
+                pStyles.item(p).setAttribute('w:val', pStyleId + '_' + index);
+            }
+            var numStyleLinks = absNode.getElementsByTagName('w:numStyleLink');
+            for (var n = 0; n < numStyleLinks.length; n++) {
+                numStyleLinks.item(n).setAttribute('w:val', numStyleLinks.item(n).getAttribute('w:val') + '_' + index);
+            }
+            var styleLinks = absNode.getElementsByTagName('w:styleLink');
+            for (var s = 0; s < styleLinks.length; s++) {
+                styleLinks.item(s).setAttribute('w:val', styleLinks.item(s).getAttribute('w:val') + '_' + index);
             }
         }
 
         var numNodes = xml.getElementsByTagName('w:num');
+        for (var j = 0; j < numNodes.length; j++) {
+            var numNode = numNodes.item(j);
+            var oldNumId = numNode.getAttribute('w:numId');
+            numMap[oldNumId] = String(nextNumId++);
+            numNode.setAttribute('w:numId', numMap[oldNumId]);
 
-        for (var node in numNodes) {
-            if (/^\d+$/.test(node) && numNodes[node].getAttribute) {
-                var ID = numNodes[node].getAttribute('w:numId');
-                numNodes[node].setAttribute('w:numId', ID + index);
-                var absrefID = numNodes[node].getElementsByTagName('w:abstractNumId');
-                for (var i in absrefID) {
-                    if (absrefID[i].getAttribute) {
-                        var iId = absrefID[i].getAttribute('w:val');
-                        absrefID[i].setAttribute('w:val', iId + index);
-                    }
-                }
-
-
+            var absRefs = numNode.getElementsByTagName('w:abstractNumId');
+            for (var k = 0; k < absRefs.length; k++) {
+                var oldRef = absRefs.item(k).getAttribute('w:val');
+                if (absMap[oldRef]) absRefs.item(k).setAttribute('w:val', absMap[oldRef]);
             }
         }
 
+        zip.setText("word/numbering.xml",
+            xmlUtils.replaceFrom(xmlString, "<w:numbering ", serializer.serializeToString(xml.documentElement)));
 
-
-        xmlString = xmlUtils.replaceFrom(xmlString, "<w:numbering ", serializer.serializeToString(xml.documentElement));
-
-        zip.setText("word/numbering.xml", xmlString);
-        // console.log(nodes);
+        // rewrite the body references that v1 left dangling
+        var docString = zip.getText('word/document.xml');
+        docString = docString.replace(/(<w:numId w:val=")(\d+)(")/g, function (m, pre, id, post) {
+            return pre + (numMap[id] || id) + post;
+        });
+        zip.setText('word/document.xml', docString);
     });
+
+    return maps;
 };
 
 var mergeNumbering = function(files, _numbering) {

@@ -80,10 +80,10 @@ function DocxMerger(options, files) {
         Hyperlinks.prepareHyperlinks(files);
         RelContentType.mergeRelations(files, this._rel);
 
-        bulletsNumbering.prepareNumbering(files);
+        var numberingMaps = bulletsNumbering.prepareNumbering(files);
         bulletsNumbering.mergeNumbering(files, this._numbering);
 
-        Style.prepareStyles(files, this._style);
+        Style.prepareStyles(files, this._style, numberingMaps);
         Style.mergeStyles(files, this._style);
 
         files.forEach(function(zip, index) {
