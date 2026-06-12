@@ -9,6 +9,8 @@ var prepareMediaFiles = function(files, media) {
        var count = 1;
 
     files.forEach(function(zip, index) {
+        var relRenames = [];
+
         zip.names().forEach(function(mfile) {
             if (/^word\/media\//.test(mfile) && mfile.length > 11) {
                 var ext = mfile.indexOf('.') !== -1 ? mfile.substring(mfile.lastIndexOf('.')) : '';
@@ -17,10 +19,22 @@ var prepareMediaFiles = function(files, media) {
                 media[count].newTarget = 'media/media_' + count + ext;
                 media[count].fileIndex = index;
                 updateMediaRelations(zip, count, media);
-                updateMediaContent(zip, count, media);
+                if (media[count].oldRelID) {
+                    relRenames.push([media[count].oldRelID, media[count].oldRelID + '_' + count]);
+                }
                 count++;
             }
         });
+
+        // Rewrite every media relationship reference in document.xml in one pass,
+        // instead of re-reading the document once per media file.
+        if (relRenames.length) {
+            var docString = zip.getText("word/document.xml");
+            relRenames.forEach(function(pair) {
+                docString = docString.replace(new RegExp(xmlUtils.escapeRegExp(pair[0]) + '"', 'g'), pair[1] + '"');
+            });
+            zip.setText("word/document.xml", docString);
+        }
     });
 };
 
@@ -50,15 +64,6 @@ var updateMediaRelations = function(zip, count, _media) {
     zip.setText("word/_rels/document.xml.rels", xmlString);
 };
 
-var updateMediaContent = function(zip, count, _media) {
-
-    var xmlString = zip.getText("word/document.xml");
-
-    xmlString = xmlString.replace(new RegExp(xmlUtils.escapeRegExp(_media[count].oldRelID) + '"', 'g'), _media[count].oldRelID + '_' + count + '"');
-
-    zip.setText("word/document.xml", xmlString);
-};
-
 var copyMediaFiles = function(base, _media, _files) {
 
     for (var media in _media) {
@@ -80,6 +85,5 @@ var copyMediaFiles = function(base, _media, _files) {
 module.exports = {
     prepareMediaFiles: prepareMediaFiles,
     updateMediaRelations: updateMediaRelations,
-    updateMediaContent: updateMediaContent,
     copyMediaFiles: copyMediaFiles
 };

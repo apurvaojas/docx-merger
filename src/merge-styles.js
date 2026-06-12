@@ -9,6 +9,7 @@ var prepareStyles = function(files, style, numberingMaps) {
         var xmlString = zip.getText("word/styles.xml");
         var xml = new DOMParser().parseFromString(xmlString, 'text/xml');
         var nodes = xml.getElementsByTagName('w:style');
+        var renamedIds = [];
 
         for (var node in nodes) {
             if (/^\d+$/.test(node) && nodes[node].getAttribute) {
@@ -39,13 +40,24 @@ var prepareStyles = function(files, style, numberingMaps) {
                     numId.setAttribute('w:val', numMap[numId_ID] || numId_ID);
                 }
 
-                updateStyleRel_Content(zip, index, styleId);
+                renamedIds.push(styleId);
             }
         }
 
         xmlString = xmlUtils.replaceFrom(xmlString, "<w:styles ", serializer.serializeToString(xml.documentElement));
 
         zip.setText("word/styles.xml", xmlString);
+
+        // Rewrite every style reference in the document body in a single pass,
+        // instead of re-reading and re-scanning document.xml once per style.
+        if (renamedIds.length) {
+            var docString = zip.getText("word/document.xml");
+            var pattern = new RegExp('w:val="(' + renamedIds.map(xmlUtils.escapeRegExp).join('|') + ')"', 'g');
+            docString = docString.replace(pattern, function(m, id) {
+                return 'w:val="' + id + '_' + index + '"';
+            });
+            zip.setText("word/document.xml", docString);
+        }
     });
 };
 
@@ -62,16 +74,6 @@ var mergeStyles = function(files, _styles) {
     });
 };
 
-var updateStyleRel_Content = function(zip, fileIndex, styleId) {
-
-
-    var xmlString = zip.getText("word/document.xml");
-
-    xmlString = xmlString.replace(new RegExp('w:val="' + xmlUtils.escapeRegExp(styleId) + '"', 'g'), 'w:val="' + styleId + '_' + fileIndex + '"');
-
-    zip.setText("word/document.xml", xmlString);
-};
-
 var generateStyles = function(zip, _style) {
     var xml = zip.getText("word/styles.xml");
     var startIndex = xml.indexOf("<w:style ");
@@ -85,6 +87,5 @@ var generateStyles = function(zip, _style) {
 module.exports = {
     mergeStyles: mergeStyles,
     prepareStyles: prepareStyles,
-    updateStyleRel_Content: updateStyleRel_Content,
     generateStyles: generateStyles
 };
