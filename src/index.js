@@ -45,8 +45,14 @@ function DocxMerger(options, files) {
     this._pageBreak = typeof options.pageBreak !== 'undefined' ? !!options.pageBreak : true;
     this._files = [];
     var self = this;
-    (files || []).forEach(function(file) {
-        self._files.push(new ZipArchive(file));
+    (files || []).forEach(function(file, index) {
+        var zip = new ZipArchive(file);
+        ['word/document.xml', 'word/styles.xml', 'word/_rels/document.xml.rels', '[Content_Types].xml'].forEach(function(part) {
+            if (zip.getText(part) === null) {
+                throw new Error('docx-merger: input file at index ' + index + ' is missing required part "' + part + '" - is it a valid .docx?');
+            }
+        });
+        self._files.push(zip);
     });
     this._contentTypes = {};
 

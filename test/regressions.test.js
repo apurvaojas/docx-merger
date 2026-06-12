@@ -91,3 +91,13 @@ test('A7: same rel Id pointing at different hyperlink targets keeps both links',
         assert.ok(rels.indexOf('Id="' + id + '"') !== -1, 'body references missing relationship ' + id);
     });
 });
+
+test('A9: clear error for non-docx input', function () {
+    assert.throws(function () { new DocxMerger({}, ['this is not a zip']); }, /not a valid docx/);
+});
+
+test('A9: clear error for a zip that is not a docx (missing word/document.xml)', function () {
+    var fflate = require('fflate');
+    var notDocx = build.u8ToBinaryString(fflate.zipSync({ 'hello.txt': fflate.strToU8('hi') }));
+    assert.throws(function () { new DocxMerger({}, [notDocx]); }, /word\/document\.xml/);
+});
